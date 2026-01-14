@@ -110,4 +110,187 @@
         @media print {
             .input-panel, .project-panel, .btn, .no-print { display: none !important; }
             body { background-color: white; padding: 0; margin: 0; }
-            .
+            .table-container { overflow: visible; }
+            table { width: 100%; min-width: auto; border: 2px solid black; font-size: 9pt; }
+            th, td { border: 1px solid black; padding: 4px; color: black; }
+            .report-footer { display: flex !important; border-top: 2px solid black; margin-top: 10px; padding-top: 10px; }
+        }
+    </style>
+</head>
+<body onload="initDate()">
+
+    <h1>消防排煙風量測試報告</h1>
+
+    <div class="project-panel">
+        <div class="form-group" style="margin-bottom: 0;">
+            <label>🏗️ 工程名稱 / 案名</label>
+            <input type="text" id="projectInput" placeholder="例如：台南科學園區新建工程" oninput="updateFooter()">
+        </div>
+    </div>
+
+    <div class="input-panel">
+        <h3 style="margin-top:0; color:#555;">➕ 新增測量數據</h3>
+        
+        <div class="form-group">
+            <label>閘門名稱 / 位置</label>
+            <input type="text" id="gateName" placeholder="例如：1F-梯廳排煙口">
+        </div>
+
+        <div class="form-group size-inputs">
+            <div>
+                <label>寬度 (W) 米</label>
+                <input type="number" id="gateWidth" step="0.01" inputmode="decimal" placeholder="1.2">
+            </div>
+            <div>
+                <label>高度 (H) 米</label>
+                <input type="number" id="gateHeight" step="0.01" inputmode="decimal" placeholder="0.6">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label style="color:#d63384;">★ 設計風量 (CMM)</label>
+            <input type="number" id="designCMM" step="1" inputmode="decimal" placeholder="例如：180">
+        </div>
+
+        <div class="form-group">
+            <label>5點風速 (m/s)</label>
+            <div class="wind-inputs">
+                <input type="number" id="v1" step="0.1" inputmode="decimal" placeholder="1">
+                <input type="number" id="v2" step="0.1" inputmode="decimal" placeholder="2">
+                <input type="number" id="v3" step="0.1" inputmode="decimal" placeholder="3">
+                <input type="number" id="v4" step="0.1" inputmode="decimal" placeholder="4">
+                <input type="number" id="v5" step="0.1" inputmode="decimal" placeholder="5">
+            </div>
+        </div>
+
+        <button class="btn btn-add" onclick="addData()">加入列表並判定</button>
+    </div>
+
+    <div style="overflow: hidden;">
+        <button class="btn btn-print" onclick="window.print()">列印報表 / 存 PDF</button>
+        <button class="btn btn-reset" onclick="clearTable()">清除所有資料</button>
+    </div>
+
+    <div class="table-container">
+        <table id="reportTable">
+            <thead>
+                <tr>
+                    <th>名稱</th>
+                    <th>尺寸(m) / 面積</th>
+                    <th>5點紀錄 (m/s)</th>
+                    <th>平均 (m/s)</th>
+                    <th>設計 (CMM)</th>
+                    <th>實測 (CMM)</th>
+                    <th>判定</th>
+                    <th class="no-print">刪除</th>
+                </tr>
+            </thead>
+            <tbody>
+                </tbody>
+        </table>
+    </div>
+
+    <div class="report-footer">
+        <div class="footer-item">工程名稱：<span id="footerProjectName">尚未輸入</span></div>
+        <div class="footer-item">測試日期：<span id="footerDate"></span></div>
+    </div>
+
+    <script>
+        function initDate() {
+            const today = new Date();
+            const dateString = `${today.getFullYear()}/${String(today.getMonth() + 1).padStart(2, '0')}/${String(today.getDate()).padStart(2, '0')}`;
+            document.getElementById('footerDate').innerText = dateString;
+        }
+
+        function updateFooter() {
+            const inputVal = document.getElementById('projectInput').value;
+            document.getElementById('footerProjectName').innerText = inputVal ? inputVal : "尚未輸入";
+        }
+
+        function addData() {
+            const name = document.getElementById('gateName').value;
+            const w = parseFloat(document.getElementById('gateWidth').value);
+            const h = parseFloat(document.getElementById('gateHeight').value);
+            const designVal = parseFloat(document.getElementById('designCMM').value);
+            
+            const v1 = parseFloat(document.getElementById('v1').value) || 0;
+            const v2 = parseFloat(document.getElementById('v2').value) || 0;
+            const v3 = parseFloat(document.getElementById('v3').value) || 0;
+            const v4 = parseFloat(document.getElementById('v4').value) || 0;
+            const v5 = parseFloat(document.getElementById('v5').value) || 0;
+
+            if (!name || isNaN(w) || isNaN(h)) {
+                alert("請填寫完整的名稱、寬度與高度！");
+                return;
+            }
+
+            const area = w * h;
+            const avgSpeed = (v1 + v2 + v3 + v4 + v5) / 5;
+            const measuredCMM = area * avgSpeed * 60;
+
+            let statusHtml = "-";
+            let statusClass = "";
+
+            if (!isNaN(designVal)) {
+                if (measuredCMM >= designVal) {
+                    statusHtml = "✅ 通過";
+                    statusClass = "status-pass";
+                } else {
+                    const diff = (designVal - measuredCMM).toFixed(1);
+                    statusHtml = `❌ 不通過<br><span style='font-size:0.8em'>少 ${diff}</span>`;
+                    statusClass = "status-fail";
+                }
+            } else {
+                statusHtml = "未指定";
+            }
+
+            const tableBody = document.querySelector("#reportTable tbody");
+            const newRow = document.createElement("tr");
+
+            // 組合5點風速字串
+            const rawData = `${v1}, ${v2}, ${v3}, ${v4}, ${v5}`;
+
+            // 在這裡將 5點紀錄 加入到表格中 (在尺寸與平均風速之間)
+            newRow.innerHTML = `
+                <td style="text-align:left;">${name}</td>
+                <td>
+                    ${w} x ${h}<br>
+                    <span style="font-size:0.85em; color:#666;">(${area.toFixed(2)}m²)</span>
+                </td>
+                <td style="font-size:0.85rem; color:#444;">${rawData}</td>
+                <td>${avgSpeed.toFixed(2)}</td>
+                <td style="font-weight:bold;">${isNaN(designVal) ? '-' : designVal}</td>
+                <td class="result-cmm" style="font-size:1.1em;">${measuredCMM.toFixed(2)}</td>
+                <td class="${statusClass}">${statusHtml}</td>
+                <td class="no-print"><button onclick="deleteRow(this)" style="color:red; background:none; border:1px solid red; border-radius:4px; padding:2px 6px;">✕</button></td>
+            `;
+
+            tableBody.appendChild(newRow);
+            
+            document.querySelector('.table-container').scrollIntoView({behavior: 'smooth'});
+            clearInputs();
+        }
+
+        function clearInputs() {
+            document.getElementById('gateName').value = '';
+            document.getElementById('gateWidth').value = '';
+            document.getElementById('gateHeight').value = '';
+            document.getElementById('designCMM').value = '';
+            for(let i=1; i<=5; i++) document.getElementById('v'+i).value = '';
+            document.getElementById('gateName').focus();
+        }
+
+        function deleteRow(btn) {
+            const row = btn.parentNode.parentNode;
+            row.parentNode.removeChild(row);
+        }
+
+        function clearTable() {
+            if(confirm("確定要刪除所有資料重新開始嗎？")) {
+                document.querySelector("#reportTable tbody").innerHTML = "";
+            }
+        }
+    </script>
+
+</body>
+</html>
