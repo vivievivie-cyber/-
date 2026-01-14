@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>消防排煙風量測試</title>
+    <title>消防排煙風量測試 (含判定)</title>
     <style>
         /* --- 全域設定 --- */
         body { 
@@ -12,7 +12,7 @@
             padding: 15px; 
             background-color: #f0f2f5; 
             color: #333;
-            padding-bottom: 60px; /* 預留底部空間 */
+            padding-bottom: 60px;
         }
         h1 { 
             text-align: center; 
@@ -21,7 +21,7 @@
             color: #2c3e50;
         }
 
-        /* --- 專案資訊卡片 (新增) --- */
+        /* --- 專案資訊卡片 --- */
         .project-panel {
             background: #e3f2fd;
             padding: 15px;
@@ -65,12 +65,14 @@
             box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
         }
 
-        /* 尺寸與風速排列 */
+        /* 尺寸輸入排版 */
         .size-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        
+        /* 風速輸入排版 */
         .wind-inputs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
         .wind-inputs input { padding: 8px 4px; text-align: center; }
         
-        /* 按鈕 */
+        /* 按鈕樣式 */
         .btn { 
             display: block; width: 100%; padding: 14px; border: none; border-radius: 8px; 
             font-size: 1rem; font-weight: bold; cursor: pointer; margin-top: 10px; transition: background 0.2s;
@@ -81,29 +83,29 @@
 
         /* --- 表格樣式 --- */
         .table-container { overflow-x: auto; margin-bottom: 20px; }
-        table { width: 100%; border-collapse: collapse; background: white; min-width: 600px; }
-        th, td { border: 1px solid #ddd; padding: 12px 8px; text-align: center; font-size: 0.9rem; }
-        th { background-color: #f8f9fa; color: #495057; }
-        .result-cmm { color: #0056b3; font-weight: bold; font-size: 1rem; }
+        table { width: 100%; border-collapse: collapse; background: white; min-width: 800px; } /* 表格加寬以容納新欄位 */
+        th, td { border: 1px solid #ddd; padding: 10px 6px; text-align: center; font-size: 0.9rem; }
+        th { background-color: #f8f9fa; color: #495057; white-space: nowrap; }
+        
+        /* 結果欄位樣式 */
+        .result-cmm { color: #0056b3; font-weight: bold; }
+        
+        /* 判定狀態樣式 */
+        .status-pass { color: #28a745; font-weight: bold; background-color: #e6fffa; }
+        .status-fail { color: #dc3545; font-weight: bold; background-color: #fff5f5; }
 
-        /* --- 報表底部資訊 (新增) --- */
+        /* --- 報表底部 --- */
         .report-footer {
-            margin-top: 20px;
-            padding: 15px;
-            border-top: 2px solid #333;
-            display: flex;
-            justify-content: space-between;
-            background: #fff;
+            margin-top: 20px; padding: 15px; border-top: 2px solid #333;
+            display: flex; justify-content: space-between; background: #fff;
         }
-        .footer-item {
-            font-size: 1.1rem;
-            font-weight: bold;
-        }
+        .footer-item { font-size: 1.1rem; font-weight: bold; }
 
         /* --- 手機直立模式 --- */
         @media (max-width: 480px) {
             .size-inputs { grid-template-columns: 1fr; }
             .report-footer { flex-direction: column; gap: 10px; }
+            h1 { font-size: 1.3rem; }
         }
 
         /* --- 列印模式 --- */
@@ -111,16 +113,11 @@
             .input-panel, .project-panel, .btn, .no-print { display: none !important; }
             body { background-color: white; padding: 0; margin: 0; }
             .table-container { overflow: visible; }
-            table { width: 100%; min-width: auto; border: 2px solid black; }
-            th, td { border: 1px solid black; padding: 8px; color: black; }
+            table { width: 100%; min-width: auto; border: 2px solid black; font-size: 10pt; }
+            th, td { border: 1px solid black; padding: 5px; color: black; }
             
             /* 列印時強制顯示底部資訊 */
-            .report-footer { 
-                display: flex !important; 
-                border-top: 2px solid black; 
-                margin-top: 20px; 
-                padding-top: 10px;
-            }
+            .report-footer { display: flex !important; border-top: 2px solid black; margin-top: 10px; padding-top: 10px; }
         }
     </style>
 </head>
@@ -155,6 +152,11 @@
         </div>
 
         <div class="form-group">
+            <label style="color:#d63384;">★ 設計風量 (CMM)</label>
+            <input type="number" id="designCMM" step="1" inputmode="decimal" placeholder="例如：180">
+        </div>
+
+        <div class="form-group">
             <label>5點風速 (m/s)</label>
             <div class="wind-inputs">
                 <input type="number" id="v1" step="0.1" inputmode="decimal" placeholder="1">
@@ -165,7 +167,7 @@
             </div>
         </div>
 
-        <button class="btn btn-add" onclick="addData()">加入列表</button>
+        <button class="btn btn-add" onclick="addData()">加入列表並判定</button>
     </div>
 
     <div style="overflow: hidden;">
@@ -180,9 +182,10 @@
                     <th>名稱</th>
                     <th>尺寸 (m)</th>
                     <th>面積 (m²)</th>
-                    <th>風速紀錄 (m/s)</th>
-                    <th>平均 (m/s)</th>
-                    <th>風量 (CMM)</th>
+                    <th>平均風速 (m/s)</th>
+                    <th>設計風量 (CMM)</th>
+                    <th>實測風量 (CMM)</th>
+                    <th>判定結果</th>
                     <th class="no-print">刪除</th>
                 </tr>
             </thead>
@@ -197,27 +200,23 @@
     </div>
 
     <script>
-        // 初始化日期與監聽
         function initDate() {
             const today = new Date();
-            const year = today.getFullYear();
-            const month = String(today.getMonth() + 1).padStart(2, '0');
-            const day = String(today.getDate()).padStart(2, '0');
-            const dateString = `${year}/${month}/${day}`;
-            
+            const dateString = `${today.getFullYear()}/${String(today.getMonth() + 1).padStart(2, '0')}/${String(today.getDate()).padStart(2, '0')}`;
             document.getElementById('footerDate').innerText = dateString;
         }
 
-        // 同步輸入的工程名稱到底部
         function updateFooter() {
             const inputVal = document.getElementById('projectInput').value;
             document.getElementById('footerProjectName').innerText = inputVal ? inputVal : "尚未輸入";
         }
 
         function addData() {
+            // 取得輸入值
             const name = document.getElementById('gateName').value;
             const w = parseFloat(document.getElementById('gateWidth').value);
             const h = parseFloat(document.getElementById('gateHeight').value);
+            const designVal = parseFloat(document.getElementById('designCMM').value); // 取得設計風量
             
             const v1 = parseFloat(document.getElementById('v1').value) || 0;
             const v2 = parseFloat(document.getElementById('v2').value) || 0;
@@ -225,15 +224,36 @@
             const v4 = parseFloat(document.getElementById('v4').value) || 0;
             const v5 = parseFloat(document.getElementById('v5').value) || 0;
 
+            // 驗證必填
             if (!name || isNaN(w) || isNaN(h)) {
                 alert("請填寫完整的名稱、寬度與高度！");
                 return;
             }
 
+            // 計算核心
             const area = w * h;
             const avgSpeed = (v1 + v2 + v3 + v4 + v5) / 5;
-            const cmm = area * avgSpeed * 60;
+            const measuredCMM = area * avgSpeed * 60; // 實測風量
 
+            // 判定邏輯
+            let statusHtml = "-";
+            let statusClass = "";
+
+            if (!isNaN(designVal)) {
+                // 如果有輸入設計風量才進行比較
+                if (measuredCMM >= designVal) {
+                    statusHtml = "✅ 通過";
+                    statusClass = "status-pass";
+                } else {
+                    const diff = (designVal - measuredCMM).toFixed(1);
+                    statusHtml = `❌ 不通過<br><span style='font-size:0.8em'>少 ${diff}</span>`;
+                    statusClass = "status-fail";
+                }
+            } else {
+                statusHtml = "未指定";
+            }
+
+            // 新增至表格
             const tableBody = document.querySelector("#reportTable tbody");
             const newRow = document.createElement("tr");
 
@@ -241,14 +261,16 @@
                 <td style="text-align:left;">${name}</td>
                 <td>${w} x ${h}</td>
                 <td>${area.toFixed(2)}</td>
-                <td style="font-size:0.85rem; color:#666;">${v1}, ${v2}, ${v3}, ${v4}, ${v5}</td>
                 <td>${avgSpeed.toFixed(2)}</td>
-                <td class="result-cmm">${cmm.toFixed(2)}</td>
+                <td style="font-weight:bold;">${isNaN(designVal) ? '-' : designVal}</td>
+                <td class="result-cmm" style="font-size:1.1em;">${measuredCMM.toFixed(2)}</td>
+                <td class="${statusClass}">${statusHtml}</td>
                 <td class="no-print"><button onclick="deleteRow(this)" style="color:red; background:none; border:1px solid red; border-radius:4px; padding:2px 6px;">✕</button></td>
             `;
 
             tableBody.appendChild(newRow);
             
+            // 滾動並清除輸入
             document.querySelector('.table-container').scrollIntoView({behavior: 'smooth'});
             clearInputs();
         }
@@ -257,6 +279,7 @@
             document.getElementById('gateName').value = '';
             document.getElementById('gateWidth').value = '';
             document.getElementById('gateHeight').value = '';
+            document.getElementById('designCMM').value = ''; // 清除設計風量
             for(let i=1; i<=5; i++) document.getElementById('v'+i).value = '';
             document.getElementById('gateName').focus();
         }
