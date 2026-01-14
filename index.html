@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>消防排煙風量測試 (含判定)</title>
+    <title>消防排煙風量測試 (含原始數據)</title>
     <style>
         /* --- 全域設定 --- */
         body { 
@@ -65,7 +65,6 @@
             box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
         }
 
-        /* 尺寸輸入排版 */
         .size-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         
         /* 風速輸入排版 */
@@ -83,7 +82,7 @@
 
         /* --- 表格樣式 --- */
         .table-container { overflow-x: auto; margin-bottom: 20px; }
-        table { width: 100%; border-collapse: collapse; background: white; min-width: 800px; } /* 表格加寬以容納新欄位 */
+        table { width: 100%; border-collapse: collapse; background: white; min-width: 900px; } /* 表格加寬 */
         th, td { border: 1px solid #ddd; padding: 10px 6px; text-align: center; font-size: 0.9rem; }
         th { background-color: #f8f9fa; color: #495057; white-space: nowrap; }
         
@@ -101,200 +100,14 @@
         }
         .footer-item { font-size: 1.1rem; font-weight: bold; }
 
-        /* --- 手機直立模式 --- */
+        /* --- RWD與列印設定 --- */
         @media (max-width: 480px) {
             .size-inputs { grid-template-columns: 1fr; }
             .report-footer { flex-direction: column; gap: 10px; }
             h1 { font-size: 1.3rem; }
         }
 
-        /* --- 列印模式 --- */
         @media print {
             .input-panel, .project-panel, .btn, .no-print { display: none !important; }
             body { background-color: white; padding: 0; margin: 0; }
-            .table-container { overflow: visible; }
-            table { width: 100%; min-width: auto; border: 2px solid black; font-size: 10pt; }
-            th, td { border: 1px solid black; padding: 5px; color: black; }
-            
-            /* 列印時強制顯示底部資訊 */
-            .report-footer { display: flex !important; border-top: 2px solid black; margin-top: 10px; padding-top: 10px; }
-        }
-    </style>
-</head>
-<body onload="initDate()">
-
-    <h1>消防排煙風量測試報告</h1>
-
-    <div class="project-panel">
-        <div class="form-group" style="margin-bottom: 0;">
-            <label>🏗️ 工程名稱 / 案名</label>
-            <input type="text" id="projectInput" placeholder="例如：台南科學園區新建工程" oninput="updateFooter()">
-        </div>
-    </div>
-
-    <div class="input-panel">
-        <h3 style="margin-top:0; color:#555;">➕ 新增測量數據</h3>
-        
-        <div class="form-group">
-            <label>閘門名稱 / 位置</label>
-            <input type="text" id="gateName" placeholder="例如：1F-梯廳排煙口">
-        </div>
-
-        <div class="form-group size-inputs">
-            <div>
-                <label>寬度 (W) 米</label>
-                <input type="number" id="gateWidth" step="0.01" inputmode="decimal" placeholder="1.2">
-            </div>
-            <div>
-                <label>高度 (H) 米</label>
-                <input type="number" id="gateHeight" step="0.01" inputmode="decimal" placeholder="0.6">
-            </div>
-        </div>
-
-        <div class="form-group">
-            <label style="color:#d63384;">★ 設計風量 (CMM)</label>
-            <input type="number" id="designCMM" step="1" inputmode="decimal" placeholder="例如：180">
-        </div>
-
-        <div class="form-group">
-            <label>5點風速 (m/s)</label>
-            <div class="wind-inputs">
-                <input type="number" id="v1" step="0.1" inputmode="decimal" placeholder="1">
-                <input type="number" id="v2" step="0.1" inputmode="decimal" placeholder="2">
-                <input type="number" id="v3" step="0.1" inputmode="decimal" placeholder="3">
-                <input type="number" id="v4" step="0.1" inputmode="decimal" placeholder="4">
-                <input type="number" id="v5" step="0.1" inputmode="decimal" placeholder="5">
-            </div>
-        </div>
-
-        <button class="btn btn-add" onclick="addData()">加入列表並判定</button>
-    </div>
-
-    <div style="overflow: hidden;">
-        <button class="btn btn-print" onclick="window.print()">列印報表 / 存 PDF</button>
-        <button class="btn btn-reset" onclick="clearTable()">清除所有資料</button>
-    </div>
-
-    <div class="table-container">
-        <table id="reportTable">
-            <thead>
-                <tr>
-                    <th>名稱</th>
-                    <th>尺寸 (m)</th>
-                    <th>面積 (m²)</th>
-                    <th>平均風速 (m/s)</th>
-                    <th>設計風量 (CMM)</th>
-                    <th>實測風量 (CMM)</th>
-                    <th>判定結果</th>
-                    <th class="no-print">刪除</th>
-                </tr>
-            </thead>
-            <tbody>
-                </tbody>
-        </table>
-    </div>
-
-    <div class="report-footer">
-        <div class="footer-item">工程名稱：<span id="footerProjectName">尚未輸入</span></div>
-        <div class="footer-item">測試日期：<span id="footerDate"></span></div>
-    </div>
-
-    <script>
-        function initDate() {
-            const today = new Date();
-            const dateString = `${today.getFullYear()}/${String(today.getMonth() + 1).padStart(2, '0')}/${String(today.getDate()).padStart(2, '0')}`;
-            document.getElementById('footerDate').innerText = dateString;
-        }
-
-        function updateFooter() {
-            const inputVal = document.getElementById('projectInput').value;
-            document.getElementById('footerProjectName').innerText = inputVal ? inputVal : "尚未輸入";
-        }
-
-        function addData() {
-            // 取得輸入值
-            const name = document.getElementById('gateName').value;
-            const w = parseFloat(document.getElementById('gateWidth').value);
-            const h = parseFloat(document.getElementById('gateHeight').value);
-            const designVal = parseFloat(document.getElementById('designCMM').value); // 取得設計風量
-            
-            const v1 = parseFloat(document.getElementById('v1').value) || 0;
-            const v2 = parseFloat(document.getElementById('v2').value) || 0;
-            const v3 = parseFloat(document.getElementById('v3').value) || 0;
-            const v4 = parseFloat(document.getElementById('v4').value) || 0;
-            const v5 = parseFloat(document.getElementById('v5').value) || 0;
-
-            // 驗證必填
-            if (!name || isNaN(w) || isNaN(h)) {
-                alert("請填寫完整的名稱、寬度與高度！");
-                return;
-            }
-
-            // 計算核心
-            const area = w * h;
-            const avgSpeed = (v1 + v2 + v3 + v4 + v5) / 5;
-            const measuredCMM = area * avgSpeed * 60; // 實測風量
-
-            // 判定邏輯
-            let statusHtml = "-";
-            let statusClass = "";
-
-            if (!isNaN(designVal)) {
-                // 如果有輸入設計風量才進行比較
-                if (measuredCMM >= designVal) {
-                    statusHtml = "✅ 通過";
-                    statusClass = "status-pass";
-                } else {
-                    const diff = (designVal - measuredCMM).toFixed(1);
-                    statusHtml = `❌ 不通過<br><span style='font-size:0.8em'>少 ${diff}</span>`;
-                    statusClass = "status-fail";
-                }
-            } else {
-                statusHtml = "未指定";
-            }
-
-            // 新增至表格
-            const tableBody = document.querySelector("#reportTable tbody");
-            const newRow = document.createElement("tr");
-
-            newRow.innerHTML = `
-                <td style="text-align:left;">${name}</td>
-                <td>${w} x ${h}</td>
-                <td>${area.toFixed(2)}</td>
-                <td>${avgSpeed.toFixed(2)}</td>
-                <td style="font-weight:bold;">${isNaN(designVal) ? '-' : designVal}</td>
-                <td class="result-cmm" style="font-size:1.1em;">${measuredCMM.toFixed(2)}</td>
-                <td class="${statusClass}">${statusHtml}</td>
-                <td class="no-print"><button onclick="deleteRow(this)" style="color:red; background:none; border:1px solid red; border-radius:4px; padding:2px 6px;">✕</button></td>
-            `;
-
-            tableBody.appendChild(newRow);
-            
-            // 滾動並清除輸入
-            document.querySelector('.table-container').scrollIntoView({behavior: 'smooth'});
-            clearInputs();
-        }
-
-        function clearInputs() {
-            document.getElementById('gateName').value = '';
-            document.getElementById('gateWidth').value = '';
-            document.getElementById('gateHeight').value = '';
-            document.getElementById('designCMM').value = ''; // 清除設計風量
-            for(let i=1; i<=5; i++) document.getElementById('v'+i).value = '';
-            document.getElementById('gateName').focus();
-        }
-
-        function deleteRow(btn) {
-            const row = btn.parentNode.parentNode;
-            row.parentNode.removeChild(row);
-        }
-
-        function clearTable() {
-            if(confirm("確定要刪除所有資料重新開始嗎？")) {
-                document.querySelector("#reportTable tbody").innerHTML = "";
-            }
-        }
-    </script>
-
-</body>
-</html>
+            .
