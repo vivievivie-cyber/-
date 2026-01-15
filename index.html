@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>排煙風量測試 (混合分流版)</title>
+    <title>排煙風量測試 (混合分流完整版)</title>
     <style>
         /* --- 全域設定 --- */
         body { 
@@ -78,8 +78,6 @@
             .table-container { overflow: visible; }
             table { width: 100%; min-width: auto; border: 2px solid black; font-size: 9pt; page-break-inside: avoid; }
             th, td { border: 1px solid black; padding: 4px; color: black; }
-            
-            /* 強制顯示所有表格 */
             .section-title { border: none; padding: 0; color: black; font-weight: bold; margin-top: 20px;}
         }
     </style>
@@ -114,5 +112,345 @@
         </div>
 
         <div class="form-group size-inputs">
-            <div><label>寬 (m) <span style="color:red">*</span></label><input type="number" id="gateWidth" step="0.01" placeholder="1.2"></div>
-            <div><label>高 (m) <span style="color:red">*</span></label><input
+            <div>
+                <label>寬 (m) <span style="color:red">*</span></label>
+                <input type="number" id="gateWidth" step="0.01" placeholder="1.2">
+            </div>
+            <div>
+                <label>高 (m) <span style="color:red">*</span></label>
+                <input type="number" id="gateHeight" step="0.01" placeholder="0.6">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>5點風速 (m/s)</label>
+            <div class="wind-inputs">
+                <input type="number" id="v1" placeholder="1">
+                <input type="number" id="v2" placeholder="2">
+                <input type="number" id="v3" placeholder="3">
+                <input type="number" id="v4" placeholder="4">
+                <input type="number" id="v5" placeholder="5">
+            </div>
+        </div>
+        <button class="btn btn-add" onclick="addData()">加入列表</button>
+    </div>
+
+    <div style="overflow: hidden;">
+        <button class="btn btn-print" onclick="window.print()">列印報表 / 存 PDF</button>
+        <button class="btn btn-reset" onclick="clearTable()">清除所有資料</button>
+    </div>
+
+    <div id="singleSection" style="display:none;">
+        <h3 class="section-title">👤 單口獨立檢討明細</h3>
+        <div class="table-container">
+            <table id="singleTable">
+                <thead>
+                    <tr>
+                        <th>類別</th>
+                        <th>閘門名稱</th>
+                        <th>尺寸/面積</th>
+                        <th>平均風速</th>
+                        <th>設計風量</th>
+                        <th>實測CMM</th>
+                        <th>判定結果</th>
+                        <th class="no-print">刪除</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="groupSection" style="display:none;">
+        <h3 class="section-title">👥 區劃合併檢討明細</h3>
+        <div class="table-container">
+            <table id="groupTable">
+                <thead>
+                    <tr>
+                        <th>所屬群組</th>
+                        <th>閘門名稱</th>
+                        <th>尺寸/面積</th>
+                        <th>5點紀錄</th>
+                        <th>平均風速</th>
+                        <th>實測CMM</th>
+                        <th class="no-print">刪除</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <h3 class="section-title">📊 各區劃合併檢討總表</h3>
+        <div class="table-container">
+            <table class="summary-table" id="summaryTable">
+                <thead>
+                    <tr>
+                        <th>群組名稱</th>
+                        <th>閘門數量</th>
+                        <th>實測總風量 (CMM)</th>
+                        <th>設計總風量 (CMM)</th>
+                        <th>判定結果</th>
+                        <th>差額</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div style="margin-top:30px; border-top:1px solid #000; padding-top:10px; display:flex; justify-content:space-between;">
+        <span>工程名稱：<span id="footerProjectName">尚未輸入</span></span>
+        <span>測試日期：<span id="footerDate"></span></span>
+    </div>
+
+    <script>
+        let allData = [];
+
+        function initDate() {
+            const today = new Date();
+            const dateStr = `${today.getFullYear()}/${String(today.getMonth() + 1).padStart(2, '0')}/${String(today.getDate()).padStart(2, '0')}`;
+            document.getElementById('footerDate').innerText = dateStr;
+        }
+
+        function updateFooter() {
+            const val = document.getElementById('projectInput').value;
+            document.getElementById('footerProjectName').innerText = val || "尚未輸入";
+        }
+
+        function addData() {
+            try {
+                // 1. 取得輸入
+                const groupInput = document.getElementById('groupName').value.trim();
+                const designValue = parseFloat(document.getElementById('designValue').value);
+                const name = document.getElementById('gateName').value.trim();
+                const w = parseFloat(document.getElementById('gateWidth').value);
+                const h = parseFloat(document.getElementById('gateHeight').value);
+                
+                const v1 = parseFloat(document.getElementById('v1').value)||0; 
+                const v2 = parseFloat(document.getElementById('v2').value)||0;
+                const v3 = parseFloat(document.getElementById('v3').value)||0; 
+                const v4 = parseFloat(document.getElementById('v4').value)||0;
+                const v5 = parseFloat(document.getElementById('v5').value)||0;
+
+                // 2. 驗證
+                if (!name || isNaN(w) || isNaN(h)) {
+                    alert("請填寫完整的 名稱、寬度 與 高度！");
+                    return;
+                }
+
+                // 3. 判斷模式 (單口 vs 群組)
+                const isSingle = (groupInput === ""); 
+                const groupName = isSingle ? "單口獨立" : groupInput;
+
+                // 4. 計算
+                const area = w * h;
+                const avgSpeed = (v1+v2+v3+v4+v5)/5;
+                const cmm = area * avgSpeed * 60;
+
+                // 5. 存入資料
+                const record = {
+                    id: Date.now(),
+                    isSingle: isSingle, // 關鍵標記
+                    group: groupName,
+                    design: isNaN(designValue) ? 0 : designValue,
+                    name: name,
+                    sizeStr: `${w} x ${h}`,
+                    area: area,
+                    speeds: `${v1},${v2},${v3},${v4},${v5}`,
+                    avg: avgSpeed,
+                    cmm: cmm
+                };
+
+                allData.push(record);
+                
+                // 6. 更新介面
+                renderAll();
+                
+                // 7. 更新輸入框狀態
+                if (!isSingle) {
+                    updateGroupSuggestions(groupName); 
+                    clearInputs(false); // 群組模式不清空群組名
+                } else {
+                    clearInputs(true); // 單口模式全清空
+                }
+
+            } catch (e) {
+                alert("錯誤：" + e.message);
+            }
+        }
+
+        function renderAll() {
+            renderSingleTable();
+            renderGroupTables();
+        }
+
+        // --- 渲染單口獨立表格 ---
+        function renderSingleTable() {
+            const tbody = document.querySelector("#singleTable tbody");
+            const section = document.getElementById("singleSection");
+            tbody.innerHTML = "";
+
+            const singles = allData.filter(item => item.isSingle);
+
+            if (singles.length === 0) {
+                section.style.display = "none";
+                return;
+            }
+            section.style.display = "block";
+
+            singles.forEach(item => {
+                let statusHtml = "-";
+                let statusClass = "";
+
+                // 單口判定邏輯
+                if (item.design > 0) {
+                    if (item.cmm >= item.design) {
+                        statusHtml = "✅ 通過";
+                        statusClass = "status-pass";
+                    } else {
+                        statusHtml = "❌ 不通過";
+                        statusClass = "status-fail";
+                    }
+                } else {
+                    statusHtml = "未指定";
+                }
+
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td><span class="single-tag">單口</span></td>
+                    <td style="text-align:left;">${item.name}</td>
+                    <td>${item.sizeStr}<br><span style="color:#666;font-size:0.8em">(${item.area.toFixed(2)}m²)</span></td>
+                    <td>${item.avg.toFixed(2)}</td>
+                    <td>${item.design > 0 ? item.design : '-'}</td>
+                    <td style="color:#0056b3; font-weight:bold;">${item.cmm.toFixed(2)}</td>
+                    <td class="${statusClass}">${statusHtml}</td>
+                    <td class="no-print"><button onclick="deleteData(${item.id})" style="color:red;border:1px solid red;background:none;border-radius:4px;cursor:pointer;">✕</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // --- 渲染群組詳細表 & 總表 ---
+        function renderGroupTables() {
+            const detailTbody = document.querySelector("#groupTable tbody");
+            const summaryTbody = document.querySelector("#summaryTable tbody");
+            const section = document.getElementById("groupSection");
+            
+            detailTbody.innerHTML = "";
+            summaryTbody.innerHTML = "";
+
+            const groupsData = allData.filter(item => !item.isSingle);
+
+            if (groupsData.length === 0) {
+                section.style.display = "none";
+                return;
+            }
+            section.style.display = "block";
+
+            // 1. 渲染明細
+            groupsData.forEach(item => {
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td><span class="group-tag">${item.group}</span></td>
+                    <td style="text-align:left;">${item.name}</td>
+                    <td>${item.sizeStr}<br><span style="color:#666;font-size:0.8em">(${item.area.toFixed(2)}m²)</span></td>
+                    <td style="font-size:0.8em;color:#555;">${item.speeds}</td>
+                    <td>${item.avg.toFixed(2)}</td>
+                    <td style="color:#0056b3;">${item.cmm.toFixed(2)}</td>
+                    <td class="no-print"><button onclick="deleteData(${item.id})" style="color:red;border:1px solid red;background:none;border-radius:4px;cursor:pointer;">✕</button></td>
+                `;
+                detailTbody.appendChild(tr);
+            });
+
+            // 2. 計算總表
+            let groupsSummary = {};
+            groupsData.forEach(item => {
+                if (!groupsSummary[item.group]) {
+                    groupsSummary[item.group] = {
+                        count: 0,
+                        totalCMM: 0,
+                        design: item.design // 預設抓第一筆的設計值
+                    };
+                }
+                if (item.design > 0) groupsSummary[item.group].design = item.design;
+                
+                groupsSummary[item.group].count++;
+                groupsSummary[item.group].totalCMM += item.cmm;
+            });
+
+            // 3. 渲染總表
+            for (let gName in groupsSummary) {
+                const g = groupsSummary[gName];
+                const tr = document.createElement("tr");
+                
+                let resultHtml = "-";
+                let resultClass = "";
+                let diffHtml = "-";
+
+                if (g.design > 0) {
+                    const diff = g.totalCMM - g.design;
+                    if (diff >= 0) {
+                        resultHtml = "✅ 合格";
+                        resultClass = "status-pass";
+                        diffHtml = `<span style="color:green">+${diff.toFixed(1)}</span>`;
+                    } else {
+                        resultHtml = "❌ 不合格";
+                        resultClass = "status-fail";
+                        diffHtml = `<span style="color:red">${diff.toFixed(1)}</span>`;
+                    }
+                } else {
+                    resultHtml = "未設目標";
+                }
+
+                tr.innerHTML = `
+                    <td style="text-align:left; padding-left:15px;">${gName}</td>
+                    <td>${g.count} 處</td>
+                    <td style="color:#0056b3;">${g.totalCMM.toFixed(1)}</td>
+                    <td>${g.design > 0 ? g.design : '-'}</td>
+                    <td class="${resultClass}">${resultHtml}</td>
+                    <td>${diffHtml}</td>
+                `;
+                summaryTbody.appendChild(tr);
+            }
+        }
+
+        function deleteData(id) {
+            allData = allData.filter(item => item.id !== id);
+            renderAll();
+        }
+
+        function clearTable() {
+            if(confirm("確定要清空所有資料嗎？")) {
+                allData = [];
+                renderAll();
+            }
+        }
+
+        function updateGroupSuggestions(newGroup) {
+            const list = document.getElementById('groupSuggestions');
+            let exists = false;
+            for (let i = 0; i < list.options.length; i++) {
+                if (list.options[i].value === newGroup) exists = true;
+            }
+            if (!exists && newGroup) {
+                const option = document.createElement('option');
+                option.value = newGroup;
+                list.appendChild(option);
+            }
+        }
+
+        function clearInputs(clearGroupInfo) {
+            document.getElementById('gateName').value = '';
+            document.getElementById('gateWidth').value = '';
+            document.getElementById('gateHeight').value = '';
+            for(let i=1;i<=5;i++) document.getElementById('v'+i).value = '';
+            
+            if (clearGroupInfo) {
+                document.getElementById('groupName').value = '';
+                document.getElementById('designValue').value = '';
+            }
+            document.getElementById('gateName').focus();
+        }
+    </script>
+</body>
+</html>
