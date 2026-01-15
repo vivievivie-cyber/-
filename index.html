@@ -3,130 +3,120 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>消防排煙風量測試 (除錯版)</title>
+    <title>多區劃排煙風量測試系統</title>
     <style>
         /* --- 全域設定 --- */
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
             margin: 0; padding: 15px; background-color: #f0f2f5; color: #333; 
-            padding-bottom: 150px; 
+            padding-bottom: 100px; 
         }
         h1 { text-align: center; font-size: 1.5rem; margin-bottom: 15px; color: #2c3e50; }
 
-        /* --- 區塊樣式 --- */
-        .project-panel, .input-panel {
+        /* --- 卡片區塊 --- */
+        .card {
             background: white; padding: 15px; border-radius: 12px;
             box-shadow: 0 2px 6px rgba(0,0,0,0.05); margin-bottom: 15px;
             border: 1px solid #e1e4e8;
         }
         .project-panel { background: #e3f2fd; border-color: #bbdefb; }
-
+        
         /* --- 輸入欄位 --- */
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 0.95rem; }
+        .form-group { margin-bottom: 12px; }
+        label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.95rem; }
         input[type="text"], input[type="number"] { 
-            width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; box-sizing: border-box; background: #fff; appearance: none;
+            width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; box-sizing: border-box; background: #fff; appearance: none;
         }
         input:focus { border-color: #007bff; outline: none; box-shadow: 0 0 0 3px rgba(0,123,255,0.1); }
-        
-        .size-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .wind-inputs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+
+        /* 群組設定區塊特別樣式 */
+        .group-section {
+            background-color: #fff3cd; padding: 10px; border-radius: 8px; border: 1px solid #ffeeba; margin-bottom: 15px;
+        }
+
+        .size-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .wind-inputs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
         .wind-inputs input { padding: 8px 2px; text-align: center; font-size: 14px; }
         
         /* --- 按鈕 --- */
-        .btn { display: block; width: 100%; padding: 14px; border: none; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .btn { display: block; width: 100%; padding: 12px; border: none; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; margin-top: 10px; }
         .btn-add { background-color: #28a745; color: white; }
         .btn-print { background-color: #007bff; color: white; margin-bottom: 15px; }
-        .btn-reset { background-color: #dc3545; color: white; width: auto; float: right; margin-bottom: 20px; padding: 10px 20px;}
+        .btn-reset { background-color: #dc3545; color: white; width: auto; float: right; margin-bottom: 20px; padding: 8px 15px; font-size: 0.9rem;}
 
         /* --- 表格樣式 --- */
         .table-container { overflow-x: auto; margin-bottom: 20px; }
         table { width: 100%; border-collapse: collapse; background: white; min-width: 900px; }
-        th, td { border: 1px solid #ddd; padding: 8px 4px; text-align: center; font-size: 0.9rem; vertical-align: middle; }
+        th, td { border: 1px solid #ddd; padding: 8px 5px; text-align: center; font-size: 0.9rem; vertical-align: middle; }
         th { background-color: #f8f9fa; color: #495057; white-space: nowrap; padding: 10px; }
         
-        /* 狀態顏色 */
-        .status-pass { color: #28a745; font-weight: bold; background-color: #e6fffa; }
-        .status-fail { color: #dc3545; font-weight: bold; background-color: #fff5f5; }
-        .result-cmm { color: #0056b3; font-weight: bold; }
+        /* 結果樣式 */
+        .status-pass { color: #155724; font-weight: bold; background-color: #d4edda; }
+        .status-fail { color: #721c24; font-weight: bold; background-color: #f8d7da; }
+        .group-tag { display: inline-block; background: #e2e6ea; padding: 2px 6px; border-radius: 4px; font-size: 0.85em; color: #555; margin-bottom: 4px;}
 
-        /* --- 底部合計懸浮列 --- */
-        .summary-bar {
-            position: fixed; bottom: 0; left: 0; right: 0;
-            background: #2c3e50; color: white;
-            padding: 15px; box-shadow: 0 -2px 10px rgba(0,0,0,0.2);
-            z-index: 1000;
-        }
-        .summary-content {
-            max-width: 900px; margin: 0 auto;
-            display: flex; justify-content: space-between; align-items: center; gap: 15px;
-        }
-        .summary-input {
-            width: 120px !important; padding: 8px !important; 
-            border: 2px solid #3498db !important; text-align: center; font-weight: bold; color: #333;
-        }
-        .total-display { font-size: 1.1rem; }
-        .total-number { font-size: 1.5rem; color: #4cd137; font-weight: bold; }
-        .group-status-box { padding: 5px 15px; border-radius: 4px; font-weight: bold; }
+        /* --- 總表樣式 --- */
+        .summary-table { width: 100%; margin-top: 10px; border: 2px solid #333; }
+        .summary-table th { background-color: #343a40; color: white; }
+        .summary-table td { font-weight: bold; font-size: 1.1em; }
 
         /* --- RWD --- */
         @media (max-width: 600px) {
             .size-inputs { grid-template-columns: 1fr; }
-            .summary-content { flex-direction: column; align-items: flex-start; }
-            .summary-bar { padding: 10px; }
-            .btn-check-group { width: 100%; display: flex; justify-content: space-between; align-items: center;}
-            body { padding-bottom: 200px; }
         }
 
         /* --- 列印模式 --- */
         @media print {
-            .input-panel, .project-panel, .btn, .no-print, .summary-bar { display: none !important; }
-            body { background-color: white; padding: 0; margin: 0; padding-bottom: 0; }
+            .card, .btn, .no-print { display: none !important; }
+            body { background-color: white; padding: 0; margin: 0; }
             .table-container { overflow: visible; }
-            table { width: 100%; min-width: auto; border: 2px solid black; font-size: 9pt; }
+            table { width: 100%; min-width: auto; border: 2px solid black; font-size: 9pt; page-break-inside: auto; }
             th, td { border: 1px solid black; padding: 4px; color: black; }
+            .group-section { display: none; }
             
-            #printSummary { display: block !important; margin-top: 20px; border: 2px solid #000; padding: 10px; page-break-inside: avoid; }
+            /* 強制顯示總表 */
+            #summarySection { display: block !important; break-inside: avoid; }
         }
     </style>
 </head>
 <body onload="initDate()">
 
-    <h1>消防排煙風量測試報告</h1>
+    <h1>多區劃排煙風量測試報告</h1>
 
-    <div class="project-panel">
+    <div class="card project-panel">
         <label>🏗️ 工程名稱 / 案名</label>
-        <input type="text" id="projectInput" placeholder="例如：台南科學園區新建工程" oninput="updateFooter()">
+        <input type="text" id="projectInput" placeholder="例如：新建工程排煙測試" oninput="updateFooter()">
     </div>
 
-    <div class="input-panel">
-        <h3 style="margin-top:0; color:#555;">➕ 新增測量</h3>
-        <div class="form-group">
-            <label>閘門名稱 <span style="color:red">*必填</span></label>
-            <input type="text" id="gateName" placeholder="例如：1F-梯廳排煙口-A">
+    <div class="card">
+        <h3 style="margin-top:0; color:#555;">➕ 新增測量數據</h3>
+        
+        <div class="group-section">
+            <div class="form-group">
+                <label>🏷️ 所屬群組/區劃名稱 <span style="font-weight:normal; font-size:0.8em; color:#666;">(相同名稱會自動合併計算)</span></label>
+                <input type="text" id="groupName" list="groupSuggestions" placeholder="例如：1F大廳、2F走廊...">
+                <datalist id="groupSuggestions"></datalist>
+            </div>
+            <div class="form-group">
+                <label>🎯 該群組設計總風量 (CMM)</label>
+                <input type="number" id="groupDesign" placeholder="例如：300">
+            </div>
         </div>
+
+        <div class="form-group">
+            <label>閘門編號/位置 <span style="color:red">*</span></label>
+            <input type="text" id="gateName" placeholder="例如：排煙口-01">
+        </div>
+
         <div class="form-group size-inputs">
-            <div>
-                <label>寬度 (m) <span style="color:red">*必填</span></label>
-                <input type="number" id="gateWidth" step="0.01" inputmode="decimal" placeholder="1.2">
-            </div>
-            <div>
-                <label>高度 (m) <span style="color:red">*必填</span></label>
-                <input type="number" id="gateHeight" step="0.01" inputmode="decimal" placeholder="0.6">
-            </div>
+            <div><label>寬 (m) <span style="color:red">*</span></label><input type="number" id="gateWidth" step="0.01" placeholder="1.2"></div>
+            <div><label>高 (m) <span style="color:red">*</span></label><input type="number" id="gateHeight" step="0.01" placeholder="0.6"></div>
         </div>
-        <div class="form-group">
-            <label>個別設計風量 (CMM) <span style="font-weight:normal; font-size:0.8em; color:#666;">(若為合併檢討請留空)</span></label>
-            <input type="number" id="designCMM" step="1" inputmode="decimal" placeholder="例如：180">
-        </div>
+
         <div class="form-group">
             <label>5點風速 (m/s)</label>
             <div class="wind-inputs">
-                <input type="number" id="v1" step="0.1" inputmode="decimal" placeholder="點1">
-                <input type="number" id="v2" step="0.1" inputmode="decimal" placeholder="點2">
-                <input type="number" id="v3" step="0.1" inputmode="decimal" placeholder="點3">
-                <input type="number" id="v4" step="0.1" inputmode="decimal" placeholder="點4">
-                <input type="number" id="v5" step="0.1" inputmode="decimal" placeholder="點5">
+                <input type="number" id="v1" placeholder="1"><input type="number" id="v2" placeholder="2"><input type="number" id="v3" placeholder="3"><input type="number" id="v4" placeholder="4"><input type="number" id="v5" placeholder="5">
             </div>
         </div>
         <button class="btn btn-add" onclick="addData()">加入列表</button>
@@ -138,58 +128,51 @@
     </div>
 
     <div class="table-container">
+        <h3 class="no-print">📋 詳細數據</h3>
         <table id="reportTable">
             <thead>
                 <tr>
-                    <th class="no-print" style="width:30px;">選</th>
-                    <th>名稱</th>
+                    <th>群組</th>
+                    <th>閘門名稱</th>
                     <th>尺寸/面積</th>
                     <th>5點紀錄</th>
                     <th>平均</th>
-                    <th>個別設計</th>
                     <th>實測CMM</th>
-                    <th>個別判定</th>
                     <th class="no-print">刪除</th>
                 </tr>
             </thead>
-            <tbody>
-                </tbody>
+            <tbody></tbody>
         </table>
     </div>
 
-    <div id="printSummary" style="display: none;">
-        <h3>📊 合併檢討結果</h3>
-        <p><strong>合併數量：</strong> <span id="printCount">0</span> 處排煙口。</p>
-        <p><strong>合併閘門明細：</strong> <span id="printNames" style="font-size:0.95em; color:#333;">(無)</span></p>
-        
-        <table style="width:100%; border:none; margin-top:10px;">
-            <tr>
-                <td style="border:none; text-align:left;">實測總風量：<span id="printTotalMeasured" style="font-size:1.2em; font-weight:bold;">0</span> CMM</td>
-                <td style="border:none; text-align:left;">合併設計要求：<span id="printTotalDesign" style="font-size:1.2em; font-weight:bold;">-</span> CMM</td>
-                <td style="border:none; text-align:left;">合併判定：<span id="printResult">未檢討</span></td>
-            </tr>
+    <div id="summarySection" style="margin-top: 30px;">
+        <h3>📊 各區劃合併檢討總表</h3>
+        <table class="summary-table" id="summaryTable">
+            <thead>
+                <tr>
+                    <th>群組名稱</th>
+                    <th>閘門數量</th>
+                    <th>實測總風量 (CMM)</th>
+                    <th>設計總風量 (CMM)</th>
+                    <th>判定結果</th>
+                    <th>差額</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td colspan="6" style="text-align:center; padding:20px; color:#777;">目前無資料</td></tr>
+            </tbody>
         </table>
+        
         <div style="margin-top:20px; border-top:1px solid #000; padding-top:10px; display:flex; justify-content:space-between;">
             <span>工程名稱：<span id="footerProjectName">尚未輸入</span></span>
             <span>測試日期：<span id="footerDate"></span></span>
         </div>
     </div>
 
-    <div class="summary-bar">
-        <div class="summary-content">
-            <div class="btn-check-group">
-                <span class="total-display">已勾選合計：<span id="totalMeasured" class="total-number">0.0</span> CMM</span>
-            </div>
-            
-            <div style="display:flex; align-items:center; gap:10px;">
-                <span style="font-size:0.9rem;">合併設計值：</span>
-                <input type="number" id="groupDesignCMM" class="summary-input" placeholder="輸入總量" oninput="updateTotal()">
-                <div id="groupStatus" class="group-status-box" style="background:#57606f;">尚未輸入</div>
-            </div>
-        </div>
-    </div>
-
     <script>
+        // 用來儲存所有數據的陣列
+        let allData = [];
+
         function initDate() {
             const today = new Date();
             const dateStr = `${today.getFullYear()}/${String(today.getMonth() + 1).padStart(2, '0')}/${String(today.getDate()).padStart(2, '0')}`;
@@ -203,144 +186,184 @@
 
         function addData() {
             try {
-                // 1. 取得資料
-                const name = document.getElementById('gateName').value;
+                // 1. 取得輸入
+                const group = document.getElementById('groupName').value.trim() || "未分組";
+                const groupDesign = parseFloat(document.getElementById('groupDesign').value) || 0;
+                const name = document.getElementById('gateName').value.trim();
                 const w = parseFloat(document.getElementById('gateWidth').value);
                 const h = parseFloat(document.getElementById('gateHeight').value);
-                const designVal = parseFloat(document.getElementById('designCMM').value);
+                
                 const v1 = parseFloat(document.getElementById('v1').value)||0; 
                 const v2 = parseFloat(document.getElementById('v2').value)||0;
                 const v3 = parseFloat(document.getElementById('v3').value)||0; 
                 const v4 = parseFloat(document.getElementById('v4').value)||0;
                 const v5 = parseFloat(document.getElementById('v5').value)||0;
 
-                // 2. 嚴格檢查 (會跳出視窗提醒)
-                if (!name) {
-                    alert("⚠️ 錯誤：請輸入「閘門名稱」！");
-                    return;
-                }
-                if (isNaN(w) || isNaN(h)) {
-                    alert("⚠️ 錯誤：請輸入正確的「寬度」與「高度」數字！");
+                // 2. 驗證
+                if (!name || isNaN(w) || isNaN(h)) {
+                    alert("請填寫完整的 名稱、寬度 與 高度！");
                     return;
                 }
 
+                // 3. 計算
                 const area = w * h;
                 const avgSpeed = (v1+v2+v3+v4+v5)/5;
-                const measuredCMM = area * avgSpeed * 60;
+                const cmm = area * avgSpeed * 60;
 
-                // 3. 個別判定
-                let statusHtml = "-";
-                let statusClass = "";
-                let checkState = "checked"; 
+                // 4. 存入資料結構
+                const record = {
+                    id: Date.now(), // 唯一ID
+                    group: group,
+                    groupDesign: groupDesign, // 記錄當下輸入的設計值
+                    name: name,
+                    sizeStr: `${w} x ${h}`,
+                    area: area,
+                    speeds: `${v1},${v2},${v3},${v4},${v5}`,
+                    avg: avgSpeed,
+                    cmm: cmm
+                };
 
-                if (!isNaN(designVal)) {
-                    checkState = ""; // 有個別設計值則預設不勾選
-                    if (measuredCMM >= designVal) {
-                        statusHtml = "✅ 通過";
-                        statusClass = "status-pass";
-                    } else {
-                        statusHtml = "❌ 不通過";
-                        statusClass = "status-fail";
-                    }
-                }
-
-                const tbody = document.querySelector("#reportTable tbody");
-                const tr = document.createElement("tr");
+                allData.push(record);
                 
+                // 5. 更新介面
+                renderAll();
+                updateGroupSuggestions(group); // 紀錄輸入過的群組名稱供下次選用
+                clearInputs(group, groupDesign); // 保留群組資訊方便連續輸入
+
+            } catch (e) {
+                alert("錯誤：" + e.message);
+            }
+        }
+
+        // 渲染畫面核心
+        function renderAll() {
+            renderDetailTable();
+            renderSummaryTable();
+        }
+
+        // 渲染明細表
+        function renderDetailTable() {
+            const tbody = document.querySelector("#reportTable tbody");
+            tbody.innerHTML = "";
+
+            allData.forEach((item, index) => {
+                const tr = document.createElement("tr");
                 tr.innerHTML = `
-                    <td class="no-print"><input type="checkbox" ${checkState} onchange="updateTotal()" data-cmm="${measuredCMM}"></td>
-                    <td style="text-align:left;">${name}</td>
-                    <td>${w}x${h}<br><span style="color:#666;font-size:0.8em">(${area.toFixed(2)}m²)</span></td>
-                    <td style="font-size:0.8em;color:#555;">${v1},${v2},${v3},${v4},${v5}</td>
-                    <td>${avgSpeed.toFixed(2)}</td>
-                    <td>${isNaN(designVal) ? '-' : designVal}</td>
-                    <td class="result-cmm">${measuredCMM.toFixed(2)}</td>
-                    <td class="${statusClass}">${statusHtml}</td>
-                    <td class="no-print"><button onclick="deleteRow(this)" style="color:red;border:1px solid red;background:none;border-radius:4px;">✕</button></td>
+                    <td><span class="group-tag">${item.group}</span></td>
+                    <td style="text-align:left;">${item.name}</td>
+                    <td>${item.sizeStr}<br><span style="color:#666;font-size:0.8em">(${item.area.toFixed(2)}m²)</span></td>
+                    <td style="font-size:0.8em;color:#555;">${item.speeds}</td>
+                    <td>${item.avg.toFixed(2)}</td>
+                    <td style="color:#0056b3; font-weight:bold;">${item.cmm.toFixed(2)}</td>
+                    <td class="no-print"><button onclick="deleteData(${item.id})" style="color:red;border:1px solid red;background:none;border-radius:4px;cursor:pointer;">✕</button></td>
                 `;
                 tbody.appendChild(tr);
-                
-                updateTotal();
-                clearInputs();
-
-            } catch (error) {
-                // 如果程式發生未知錯誤，會直接告訴你
-                alert("程式發生錯誤：" + error.message);
-            }
+            });
         }
 
-        function updateTotal() {
-            const checkboxes = document.querySelectorAll('#reportTable tbody input[type="checkbox"]');
-            let total = 0;
-            let checkedCount = 0;
-            let checkedNames = [];
+        // 渲染總表 (合併計算邏輯在這裡)
+        function renderSummaryTable() {
+            const tbody = document.querySelector("#summaryTable tbody");
+            tbody.innerHTML = "";
 
-            checkboxes.forEach(box => {
-                if (box.checked) {
-                    total += parseFloat(box.getAttribute('data-cmm'));
-                    checkedCount++;
-                    let row = box.closest('tr');
-                    let name = row.cells[1].innerText;
-                    checkedNames.push(name);
+            if (allData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:#777;">目前無資料</td></tr>';
+                return;
+            }
+
+            // 1. 分組統計
+            let groups = {};
+            
+            allData.forEach(item => {
+                if (!groups[item.group]) {
+                    groups[item.group] = {
+                        count: 0,
+                        totalCMM: 0,
+                        designCMM: item.groupDesign // 取第一筆遇到的設計值
+                    };
                 }
+                // 如果後面的資料有更新設計值，且不為0，則更新 (以最後輸入為準)
+                if (item.groupDesign > 0) {
+                    groups[item.group].designCMM = item.groupDesign;
+                }
+                
+                groups[item.group].count += 1;
+                groups[item.group].totalCMM += item.cmm;
             });
 
-            document.getElementById('totalMeasured').innerText = total.toFixed(1);
-            document.getElementById('printCount').innerText = checkedCount;
-            document.getElementById('printTotalMeasured').innerText = total.toFixed(1);
-            
-            if(checkedNames.length > 0) {
-                document.getElementById('printNames').innerText = checkedNames.join('、');
-            } else {
-                document.getElementById('printNames').innerText = "(無勾選項目)";
-            }
-
-            const groupDesign = parseFloat(document.getElementById('groupDesignCMM').value);
-            const statusBox = document.getElementById('groupStatus');
-            
-            if (!isNaN(groupDesign) && groupDesign > 0) {
-                document.getElementById('printTotalDesign').innerText = groupDesign;
+            // 2. 生成表格列
+            for (let groupName in groups) {
+                const g = groups[groupName];
+                const tr = document.createElement("tr");
                 
-                if (total >= groupDesign) {
-                    statusBox.innerText = "✅ 合併通過";
-                    statusBox.style.background = "#28a745";
-                    statusBox.style.color = "white";
-                    document.getElementById('printResult').innerHTML = "<span style='color:green; font-weight:bold;'>✅ 通過</span>";
+                // 判定
+                let resultHtml = "-";
+                let resultClass = "";
+                let diffHtml = "-";
+
+                if (g.designCMM > 0) {
+                    const diff = g.totalCMM - g.designCMM;
+                    if (diff >= 0) {
+                        resultHtml = "✅ 合格";
+                        resultClass = "status-pass";
+                        diffHtml = `<span style="color:green">+${diff.toFixed(1)}</span>`;
+                    } else {
+                        resultHtml = "❌ 不合格";
+                        resultClass = "status-fail";
+                        diffHtml = `<span style="color:red">${diff.toFixed(1)}</span>`;
+                    }
                 } else {
-                    const diff = (groupDesign - total).toFixed(1);
-                    statusBox.innerText = `❌ 不足 ${diff}`;
-                    statusBox.style.background = "#dc3545";
-                    statusBox.style.color = "white";
-                    document.getElementById('printResult').innerHTML = `<span style='color:red; font-weight:bold;'>❌ 不通過 (少 ${diff})</span>`;
+                    resultHtml = "未設目標";
                 }
-            } else {
-                statusBox.innerText = "等待輸入設計值...";
-                statusBox.style.background = "#57606f";
-                statusBox.style.color = "white";
-                document.getElementById('printTotalDesign').innerText = "-";
-                document.getElementById('printResult').innerText = "未設定設計值";
+
+                tr.innerHTML = `
+                    <td style="text-align:left; padding-left:15px;">${groupName}</td>
+                    <td>${g.count} 處</td>
+                    <td style="color:#0056b3;">${g.totalCMM.toFixed(1)}</td>
+                    <td>${g.designCMM > 0 ? g.designCMM : '-'}</td>
+                    <td class="${resultClass}">${resultHtml}</td>
+                    <td>${diffHtml}</td>
+                `;
+                tbody.appendChild(tr);
             }
         }
 
-        function clearInputs() {
-            document.getElementById('gateName').value = '';
-            document.getElementById('gateWidth').value = '';
-            document.getElementById('gateHeight').value = '';
-            document.getElementById('designCMM').value = ''; 
-            for(let i=1;i<=5;i++) document.getElementById('v'+i).value = '';
-            document.getElementById('gateName').focus();
-        }
-
-        function deleteRow(btn) {
-            btn.closest('tr').remove();
-            updateTotal(); 
+        function deleteData(id) {
+            allData = allData.filter(item => item.id !== id);
+            renderAll();
         }
 
         function clearTable() {
-            if(confirm("清除所有資料？")) {
-                document.querySelector("#reportTable tbody").innerHTML = "";
-                updateTotal();
+            if(confirm("確定要清空所有資料嗎？")) {
+                allData = [];
+                renderAll();
             }
+        }
+
+        // 貼心功能：自動更新群組建議選單
+        function updateGroupSuggestions(newGroup) {
+            const list = document.getElementById('groupSuggestions');
+            // 檢查是否已存在
+            let exists = false;
+            for (let i = 0; i < list.options.length; i++) {
+                if (list.options[i].value === newGroup) exists = true;
+            }
+            if (!exists && newGroup !== "未分組") {
+                const option = document.createElement('option');
+                option.value = newGroup;
+                list.appendChild(option);
+            }
+        }
+
+        // 清空輸入框 (保留群組名稱，方便連續輸入同一組)
+        function clearInputs(lastGroup, lastDesign) {
+            // 不清空 groupName 和 groupDesign，讓使用者可以接著打
+            document.getElementById('gateName').value = '';
+            document.getElementById('gateWidth').value = '';
+            document.getElementById('gateHeight').value = '';
+            for(let i=1;i<=5;i++) document.getElementById('v'+i).value = '';
+            
+            document.getElementById('gateName').focus();
         }
     </script>
 </body>
