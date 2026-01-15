@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>排煙風量測試 (選單優化版)</title>
+    <title>排煙風量測試 (選單+明細修正版)</title>
     <style>
         /* --- 全域設定 --- */
         body { 
@@ -30,7 +30,7 @@
         }
         input:focus, select:focus { border-color: #007bff; outline: none; box-shadow: 0 0 0 3px rgba(0,123,255,0.1); }
         
-        /* 下拉選單特別樣式 */
+        /* 下拉選單箭頭優化 */
         select { background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23007CB2%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E"); background-repeat: no-repeat; background-position: right .7em top 50%; background-size: .65em auto; }
 
         /* 分隔線標題 */
@@ -236,7 +236,7 @@
             document.getElementById('footerProjectName').innerText = val || "尚未輸入";
         }
 
-        // 處理尺寸選單切換
+        // 尺寸下拉選單控制邏輯
         function handleSizeChange() {
             const val = document.getElementById('sizeSelect').value;
             const customBox = document.getElementById('customSizeBox');
@@ -244,13 +244,13 @@
             const hInput = document.getElementById('gateHeight');
 
             if (val === 'custom') {
-                // 選擇自行輸入：顯示輸入框並清空
+                // 顯示手動輸入框
                 customBox.style.display = 'grid';
                 wInput.value = '';
                 hInput.value = '';
                 wInput.focus();
             } else {
-                // 選擇常用尺寸：隱藏輸入框並自動填值
+                // 隱藏手動輸入框，並填入選單的值
                 customBox.style.display = 'none';
                 const [w, h] = val.split(',');
                 wInput.value = w;
@@ -275,7 +275,7 @@
 
                 // 2. 驗證
                 if (!name || isNaN(w) || isNaN(h)) {
-                    alert("請確認「閘門名稱」與「尺寸」是否已填寫！");
+                    alert("請確認「閘門名稱」與「尺寸」是否已正確輸入！");
                     return;
                 }
 
