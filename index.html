@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>排煙風量測試 (選單版 V2)</title>
+    <title>排煙風量測試 (雙選單版)</title>
     <style>
         /* --- 全域設定 --- */
         body { 
@@ -43,7 +43,7 @@
             background-color: #fff8e1; padding: 15px; border-radius: 8px; border: 1px solid #ffe082; margin-bottom: 15px;
         }
 
-        .size-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .size-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         .wind-inputs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
         .wind-inputs input { padding: 8px 2px; text-align: center; font-size: 14px; }
         
@@ -116,27 +116,31 @@
             <input type="text" id="gateName" placeholder="例如：排煙口-01">
         </div>
 
-        <div class="form-group">
-            <label>閘門尺寸規格 <span style="color:red">*</span></label>
-            <select id="sizeSelect" onchange="handleSizeChange()">
-                <option value="" disabled selected>-- 請選擇常用尺寸 --</option>
-                <option value="0.4,0.4">1. 尺寸 0.4 x 0.4 (m)</option>
-                <option value="0.5,0.5">2. 尺寸 0.5 x 0.5 (m)</option>
-                <option value="0.6,0.6">3. 尺寸 0.6 x 0.6 (m)</option>
-                <option value="0.8,0.8">4. 尺寸 0.8 x 0.8 (m)</option>
-                <option value="1.0,1.0">5. 尺寸 1.0 x 1.0 (m)</option>
-                <option value="custom" style="color:blue; font-weight:bold;">6. 其他 (自行輸入)</option>
-            </select>
-        </div>
-
-        <div class="form-group size-inputs" id="customSizeBox" style="display:none;">
+        <div class="form-group size-inputs">
             <div>
-                <label>寬 (m) <span style="color:red">*</span></label>
-                <input type="number" id="gateWidth" step="0.01" inputmode="decimal" placeholder="自行輸入">
+                <label>寬度 (m) <span style="color:red">*</span></label>
+                <select id="wSelect" onchange="updateDim('w')">
+                    <option value="" disabled selected>請選擇</option>
+                    <option value="0.4">0.4</option>
+                    <option value="0.6">0.6</option>
+                    <option value="0.8">0.8</option>
+                    <option value="1.0">1.0</option>
+                    <option value="custom" style="color:blue; font-weight:bold;">其他 (輸入)</option>
+                </select>
+                <input type="number" id="gateWidth" step="0.01" inputmode="decimal" placeholder="輸入寬度" style="display:none; margin-top:5px; border-color:#007bff;">
             </div>
+
             <div>
-                <label>高 (m) <span style="color:red">*</span></label>
-                <input type="number" id="gateHeight" step="0.01" inputmode="decimal" placeholder="自行輸入">
+                <label>高度 (m) <span style="color:red">*</span></label>
+                <select id="hSelect" onchange="updateDim('h')">
+                    <option value="" disabled selected>請選擇</option>
+                    <option value="0.4">0.4</option>
+                    <option value="0.6">0.6</option>
+                    <option value="0.8">0.8</option>
+                    <option value="1.0">1.0</option>
+                    <option value="custom" style="color:blue; font-weight:bold;">其他 (輸入)</option>
+                </select>
+                <input type="number" id="gateHeight" step="0.01" inputmode="decimal" placeholder="輸入高度" style="display:none; margin-top:5px; border-color:#007bff;">
             </div>
         </div>
 
@@ -236,33 +240,28 @@
             document.getElementById('footerProjectName').innerText = val || "尚未輸入";
         }
 
-        // 尺寸下拉選單控制邏輯
-        function handleSizeChange() {
-            const val = document.getElementById('sizeSelect').value;
-            const customBox = document.getElementById('customSizeBox');
-            const wInput = document.getElementById('gateWidth');
-            const hInput = document.getElementById('gateHeight');
+        // --- 核心邏輯：雙選單控制 (寬/高獨立) ---
+        function updateDim(type) {
+            const selectId = type === 'w' ? 'wSelect' : 'hSelect';
+            const inputId = type === 'w' ? 'gateWidth' : 'gateHeight';
+            
+            const selectVal = document.getElementById(selectId).value;
+            const inputEl = document.getElementById(inputId);
 
-            if (val === 'custom') {
-                // 顯示手動輸入框
-                customBox.style.display = 'grid';
-                wInput.value = '';
-                hInput.value = '';
-                wInput.focus();
+            if (selectVal === 'custom') {
+                // 顯示輸入框
+                inputEl.style.display = 'block';
+                inputEl.value = ''; // 清空讓使用者輸入
+                inputEl.focus();
             } else {
-                // 隱藏手動輸入框，並填入選單的值
-                customBox.style.display = 'none';
-                if(val) {
-                    const [w, h] = val.split(',');
-                    wInput.value = w;
-                    hInput.value = h;
-                }
+                // 隱藏輸入框，並填入選單值
+                inputEl.style.display = 'none';
+                inputEl.value = selectVal;
             }
         }
 
         function addData() {
             try {
-                // 1. 取得輸入
                 const groupInput = document.getElementById('groupName').value.trim();
                 const designValue = parseFloat(document.getElementById('designValue').value);
                 const name = document.getElementById('gateName').value.trim();
@@ -275,22 +274,18 @@
                 const v4 = parseFloat(document.getElementById('v4').value)||0;
                 const v5 = parseFloat(document.getElementById('v5').value)||0;
 
-                // 2. 驗證
-                if (!name || isNaN(w) || isNaN(h)) {
-                    alert("請確認「閘門名稱」與「尺寸」是否已填寫！");
-                    return;
-                }
+                // 驗證邏輯
+                if (!name) { alert("請輸入閘門名稱！"); return; }
+                if (isNaN(w)) { alert("請選擇或輸入「寬度」！"); return; }
+                if (isNaN(h)) { alert("請選擇或輸入「高度」！"); return; }
 
-                // 3. 判斷模式 (單口 vs 群組)
                 const isSingle = (groupInput === ""); 
                 const groupName = isSingle ? "單口獨立" : groupInput;
 
-                // 4. 計算
                 const area = w * h;
                 const avgSpeed = (v1+v2+v3+v4+v5)/5;
                 const cmm = area * avgSpeed * 60;
 
-                // 5. 存入資料
                 const record = {
                     id: Date.now(),
                     isSingle: isSingle, 
@@ -307,7 +302,6 @@
                 allData.push(record);
                 renderAll();
                 
-                // 7. 更新輸入框狀態
                 if (!isSingle) {
                     updateGroupSuggestions(groupName); 
                     clearInputs(false); 
@@ -325,7 +319,6 @@
             renderGroupTables();
         }
 
-        // --- 渲染單口獨立表格 ---
         function renderSingleTable() {
             const tbody = document.querySelector("#singleTable tbody");
             const section = document.getElementById("singleSection");
@@ -371,7 +364,6 @@
             });
         }
 
-        // --- 渲染群組詳細表 & 總表 ---
         function renderGroupTables() {
             const detailTbody = document.querySelector("#groupTable tbody");
             const summaryTbody = document.querySelector("#summaryTable tbody");
@@ -388,7 +380,6 @@
             }
             section.style.display = "block";
 
-            // 1. 渲染明細
             groupsData.forEach(item => {
                 const tr = document.createElement("tr");
                 tr.innerHTML = `
@@ -403,7 +394,6 @@
                 detailTbody.appendChild(tr);
             });
 
-            // 2. 計算總表
             let groupsSummary = {};
             groupsData.forEach(item => {
                 if (!groupsSummary[item.group]) {
@@ -419,7 +409,6 @@
                 groupsSummary[item.group].totalCMM += item.cmm;
             });
 
-            // 3. 渲染總表
             for (let gName in groupsSummary) {
                 const g = groupsSummary[gName];
                 const tr = document.createElement("tr");
@@ -483,9 +472,11 @@
         function clearInputs(clearGroupInfo) {
             document.getElementById('gateName').value = '';
             
-            // 重置尺寸選單與隱藏欄位
-            document.getElementById('sizeSelect').value = ''; 
-            document.getElementById('customSizeBox').style.display = 'none';
+            // 重置選單與輸入框
+            document.getElementById('wSelect').value = ''; 
+            document.getElementById('hSelect').value = ''; 
+            document.getElementById('gateWidth').style.display = 'none';
+            document.getElementById('gateHeight').style.display = 'none';
             document.getElementById('gateWidth').value = '';
             document.getElementById('gateHeight').value = '';
 
