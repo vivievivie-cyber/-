@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>排煙風量測試 (選單+明細修正版)</title>
+    <title>排煙風量測試 (選單版 V2)</title>
     <style>
         /* --- 全域設定 --- */
         body { 
@@ -252,9 +252,11 @@
             } else {
                 // 隱藏手動輸入框，並填入選單的值
                 customBox.style.display = 'none';
-                const [w, h] = val.split(',');
-                wInput.value = w;
-                hInput.value = h;
+                if(val) {
+                    const [w, h] = val.split(',');
+                    wInput.value = w;
+                    hInput.value = h;
+                }
             }
         }
 
@@ -275,7 +277,7 @@
 
                 // 2. 驗證
                 if (!name || isNaN(w) || isNaN(h)) {
-                    alert("請確認「閘門名稱」與「尺寸」是否已正確輸入！");
+                    alert("請確認「閘門名稱」與「尺寸」是否已填寫！");
                     return;
                 }
 
@@ -291,7 +293,7 @@
                 // 5. 存入資料
                 const record = {
                     id: Date.now(),
-                    isSingle: isSingle, // 關鍵標記
+                    isSingle: isSingle, 
                     group: groupName,
                     design: isNaN(designValue) ? 0 : designValue,
                     name: name,
@@ -303,8 +305,6 @@
                 };
 
                 allData.push(record);
-                
-                // 6. 更新介面
                 renderAll();
                 
                 // 7. 更新輸入框狀態
@@ -343,7 +343,6 @@
                 let statusHtml = "-";
                 let statusClass = "";
 
-                // 單口判定邏輯
                 if (item.design > 0) {
                     if (item.cmm >= item.design) {
                         statusHtml = "✅ 通過";
