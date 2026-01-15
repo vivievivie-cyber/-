@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>多區劃排煙風量測試系統</title>
+    <title>排煙風量測試 (混合分流版)</title>
     <style>
         /* --- 全域設定 --- */
         body { 
@@ -16,7 +16,7 @@
         /* --- 卡片區塊 --- */
         .card {
             background: white; padding: 15px; border-radius: 12px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.05); margin-bottom: 15px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05); margin-bottom: 20px;
             border: 1px solid #e1e4e8;
         }
         .project-panel { background: #e3f2fd; border-color: #bbdefb; }
@@ -29,9 +29,14 @@
         }
         input:focus { border-color: #007bff; outline: none; box-shadow: 0 0 0 3px rgba(0,123,255,0.1); }
 
+        /* 分隔線標題 */
+        .section-title {
+            border-left: 5px solid #007bff; padding-left: 10px; margin: 20px 0 10px 0; color: #007bff; font-size: 1.2rem; display: flex; justify-content: space-between; align-items: center;
+        }
+
         /* 群組設定區塊特別樣式 */
-        .group-section {
-            background-color: #fff3cd; padding: 10px; border-radius: 8px; border: 1px solid #ffeeba; margin-bottom: 15px;
+        .group-input-box {
+            background-color: #fff8e1; padding: 15px; border-radius: 8px; border: 1px solid #ffe082; margin-bottom: 15px;
         }
 
         .size-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -53,7 +58,8 @@
         /* 結果樣式 */
         .status-pass { color: #155724; font-weight: bold; background-color: #d4edda; }
         .status-fail { color: #721c24; font-weight: bold; background-color: #f8d7da; }
-        .group-tag { display: inline-block; background: #e2e6ea; padding: 2px 6px; border-radius: 4px; font-size: 0.85em; color: #555; margin-bottom: 4px;}
+        .group-tag { display: inline-block; background: #6c757d; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.85em; }
+        .single-tag { display: inline-block; background: #17a2b8; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.85em; }
 
         /* --- 總表樣式 --- */
         .summary-table { width: 100%; margin-top: 10px; border: 2px solid #333; }
@@ -70,18 +76,17 @@
             .card, .btn, .no-print { display: none !important; }
             body { background-color: white; padding: 0; margin: 0; }
             .table-container { overflow: visible; }
-            table { width: 100%; min-width: auto; border: 2px solid black; font-size: 9pt; page-break-inside: auto; }
+            table { width: 100%; min-width: auto; border: 2px solid black; font-size: 9pt; page-break-inside: avoid; }
             th, td { border: 1px solid black; padding: 4px; color: black; }
-            .group-section { display: none; }
             
-            /* 強制顯示總表 */
-            #summarySection { display: block !important; break-inside: avoid; }
+            /* 強制顯示所有表格 */
+            .section-title { border: none; padding: 0; color: black; font-weight: bold; margin-top: 20px;}
         }
     </style>
 </head>
 <body onload="initDate()">
 
-    <h1>多區劃排煙風量測試報告</h1>
+    <h1>消防排煙風量測試報告</h1>
 
     <div class="card project-panel">
         <label>🏗️ 工程名稱 / 案名</label>
@@ -91,15 +96,15 @@
     <div class="card">
         <h3 style="margin-top:0; color:#555;">➕ 新增測量數據</h3>
         
-        <div class="group-section">
+        <div class="group-input-box">
             <div class="form-group">
-                <label>🏷️ 所屬群組/區劃名稱 <span style="font-weight:normal; font-size:0.8em; color:#666;">(相同名稱會自動合併計算)</span></label>
-                <input type="text" id="groupName" list="groupSuggestions" placeholder="例如：1F大廳、2F走廊...">
+                <label>🏷️ 群組/區劃名稱 <span style="font-weight:normal; color:#d63384;">(★ 若為單口獨立，請留空)</span></label>
+                <input type="text" id="groupName" list="groupSuggestions" placeholder="例如：1F大廳 (若為單口請勿填寫)">
                 <datalist id="groupSuggestions"></datalist>
             </div>
             <div class="form-group">
-                <label>🎯 該群組設計總風量 (CMM)</label>
-                <input type="number" id="groupDesign" placeholder="例如：300">
+                <label>🎯 該群組設計總風量 (CMM) 或 單口設計風量</label>
+                <input type="number" id="designValue" placeholder="例如：300">
             </div>
         </div>
 
@@ -108,263 +113,4 @@
             <input type="text" id="gateName" placeholder="例如：排煙口-01">
         </div>
 
-        <div class="form-group size-inputs">
-            <div><label>寬 (m) <span style="color:red">*</span></label><input type="number" id="gateWidth" step="0.01" placeholder="1.2"></div>
-            <div><label>高 (m) <span style="color:red">*</span></label><input type="number" id="gateHeight" step="0.01" placeholder="0.6"></div>
-        </div>
-
-        <div class="form-group">
-            <label>5點風速 (m/s)</label>
-            <div class="wind-inputs">
-                <input type="number" id="v1" placeholder="1"><input type="number" id="v2" placeholder="2"><input type="number" id="v3" placeholder="3"><input type="number" id="v4" placeholder="4"><input type="number" id="v5" placeholder="5">
-            </div>
-        </div>
-        <button class="btn btn-add" onclick="addData()">加入列表</button>
-    </div>
-
-    <div style="overflow: hidden;">
-        <button class="btn btn-print" onclick="window.print()">列印報表 / 存 PDF</button>
-        <button class="btn btn-reset" onclick="clearTable()">清除所有資料</button>
-    </div>
-
-    <div class="table-container">
-        <h3 class="no-print">📋 詳細數據</h3>
-        <table id="reportTable">
-            <thead>
-                <tr>
-                    <th>群組</th>
-                    <th>閘門名稱</th>
-                    <th>尺寸/面積</th>
-                    <th>5點紀錄</th>
-                    <th>平均</th>
-                    <th>實測CMM</th>
-                    <th class="no-print">刪除</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
-    </div>
-
-    <div id="summarySection" style="margin-top: 30px;">
-        <h3>📊 各區劃合併檢討總表</h3>
-        <table class="summary-table" id="summaryTable">
-            <thead>
-                <tr>
-                    <th>群組名稱</th>
-                    <th>閘門數量</th>
-                    <th>實測總風量 (CMM)</th>
-                    <th>設計總風量 (CMM)</th>
-                    <th>判定結果</th>
-                    <th>差額</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr><td colspan="6" style="text-align:center; padding:20px; color:#777;">目前無資料</td></tr>
-            </tbody>
-        </table>
-        
-        <div style="margin-top:20px; border-top:1px solid #000; padding-top:10px; display:flex; justify-content:space-between;">
-            <span>工程名稱：<span id="footerProjectName">尚未輸入</span></span>
-            <span>測試日期：<span id="footerDate"></span></span>
-        </div>
-    </div>
-
-    <script>
-        // 用來儲存所有數據的陣列
-        let allData = [];
-
-        function initDate() {
-            const today = new Date();
-            const dateStr = `${today.getFullYear()}/${String(today.getMonth() + 1).padStart(2, '0')}/${String(today.getDate()).padStart(2, '0')}`;
-            document.getElementById('footerDate').innerText = dateStr;
-        }
-
-        function updateFooter() {
-            const val = document.getElementById('projectInput').value;
-            document.getElementById('footerProjectName').innerText = val || "尚未輸入";
-        }
-
-        function addData() {
-            try {
-                // 1. 取得輸入
-                const group = document.getElementById('groupName').value.trim() || "未分組";
-                const groupDesign = parseFloat(document.getElementById('groupDesign').value) || 0;
-                const name = document.getElementById('gateName').value.trim();
-                const w = parseFloat(document.getElementById('gateWidth').value);
-                const h = parseFloat(document.getElementById('gateHeight').value);
-                
-                const v1 = parseFloat(document.getElementById('v1').value)||0; 
-                const v2 = parseFloat(document.getElementById('v2').value)||0;
-                const v3 = parseFloat(document.getElementById('v3').value)||0; 
-                const v4 = parseFloat(document.getElementById('v4').value)||0;
-                const v5 = parseFloat(document.getElementById('v5').value)||0;
-
-                // 2. 驗證
-                if (!name || isNaN(w) || isNaN(h)) {
-                    alert("請填寫完整的 名稱、寬度 與 高度！");
-                    return;
-                }
-
-                // 3. 計算
-                const area = w * h;
-                const avgSpeed = (v1+v2+v3+v4+v5)/5;
-                const cmm = area * avgSpeed * 60;
-
-                // 4. 存入資料結構
-                const record = {
-                    id: Date.now(), // 唯一ID
-                    group: group,
-                    groupDesign: groupDesign, // 記錄當下輸入的設計值
-                    name: name,
-                    sizeStr: `${w} x ${h}`,
-                    area: area,
-                    speeds: `${v1},${v2},${v3},${v4},${v5}`,
-                    avg: avgSpeed,
-                    cmm: cmm
-                };
-
-                allData.push(record);
-                
-                // 5. 更新介面
-                renderAll();
-                updateGroupSuggestions(group); // 紀錄輸入過的群組名稱供下次選用
-                clearInputs(group, groupDesign); // 保留群組資訊方便連續輸入
-
-            } catch (e) {
-                alert("錯誤：" + e.message);
-            }
-        }
-
-        // 渲染畫面核心
-        function renderAll() {
-            renderDetailTable();
-            renderSummaryTable();
-        }
-
-        // 渲染明細表
-        function renderDetailTable() {
-            const tbody = document.querySelector("#reportTable tbody");
-            tbody.innerHTML = "";
-
-            allData.forEach((item, index) => {
-                const tr = document.createElement("tr");
-                tr.innerHTML = `
-                    <td><span class="group-tag">${item.group}</span></td>
-                    <td style="text-align:left;">${item.name}</td>
-                    <td>${item.sizeStr}<br><span style="color:#666;font-size:0.8em">(${item.area.toFixed(2)}m²)</span></td>
-                    <td style="font-size:0.8em;color:#555;">${item.speeds}</td>
-                    <td>${item.avg.toFixed(2)}</td>
-                    <td style="color:#0056b3; font-weight:bold;">${item.cmm.toFixed(2)}</td>
-                    <td class="no-print"><button onclick="deleteData(${item.id})" style="color:red;border:1px solid red;background:none;border-radius:4px;cursor:pointer;">✕</button></td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        // 渲染總表 (合併計算邏輯在這裡)
-        function renderSummaryTable() {
-            const tbody = document.querySelector("#summaryTable tbody");
-            tbody.innerHTML = "";
-
-            if (allData.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:#777;">目前無資料</td></tr>';
-                return;
-            }
-
-            // 1. 分組統計
-            let groups = {};
-            
-            allData.forEach(item => {
-                if (!groups[item.group]) {
-                    groups[item.group] = {
-                        count: 0,
-                        totalCMM: 0,
-                        designCMM: item.groupDesign // 取第一筆遇到的設計值
-                    };
-                }
-                // 如果後面的資料有更新設計值，且不為0，則更新 (以最後輸入為準)
-                if (item.groupDesign > 0) {
-                    groups[item.group].designCMM = item.groupDesign;
-                }
-                
-                groups[item.group].count += 1;
-                groups[item.group].totalCMM += item.cmm;
-            });
-
-            // 2. 生成表格列
-            for (let groupName in groups) {
-                const g = groups[groupName];
-                const tr = document.createElement("tr");
-                
-                // 判定
-                let resultHtml = "-";
-                let resultClass = "";
-                let diffHtml = "-";
-
-                if (g.designCMM > 0) {
-                    const diff = g.totalCMM - g.designCMM;
-                    if (diff >= 0) {
-                        resultHtml = "✅ 合格";
-                        resultClass = "status-pass";
-                        diffHtml = `<span style="color:green">+${diff.toFixed(1)}</span>`;
-                    } else {
-                        resultHtml = "❌ 不合格";
-                        resultClass = "status-fail";
-                        diffHtml = `<span style="color:red">${diff.toFixed(1)}</span>`;
-                    }
-                } else {
-                    resultHtml = "未設目標";
-                }
-
-                tr.innerHTML = `
-                    <td style="text-align:left; padding-left:15px;">${groupName}</td>
-                    <td>${g.count} 處</td>
-                    <td style="color:#0056b3;">${g.totalCMM.toFixed(1)}</td>
-                    <td>${g.designCMM > 0 ? g.designCMM : '-'}</td>
-                    <td class="${resultClass}">${resultHtml}</td>
-                    <td>${diffHtml}</td>
-                `;
-                tbody.appendChild(tr);
-            }
-        }
-
-        function deleteData(id) {
-            allData = allData.filter(item => item.id !== id);
-            renderAll();
-        }
-
-        function clearTable() {
-            if(confirm("確定要清空所有資料嗎？")) {
-                allData = [];
-                renderAll();
-            }
-        }
-
-        // 貼心功能：自動更新群組建議選單
-        function updateGroupSuggestions(newGroup) {
-            const list = document.getElementById('groupSuggestions');
-            // 檢查是否已存在
-            let exists = false;
-            for (let i = 0; i < list.options.length; i++) {
-                if (list.options[i].value === newGroup) exists = true;
-            }
-            if (!exists && newGroup !== "未分組") {
-                const option = document.createElement('option');
-                option.value = newGroup;
-                list.appendChild(option);
-            }
-        }
-
-        // 清空輸入框 (保留群組名稱，方便連續輸入同一組)
-        function clearInputs(lastGroup, lastDesign) {
-            // 不清空 groupName 和 groupDesign，讓使用者可以接著打
-            document.getElementById('gateName').value = '';
-            document.getElementById('gateWidth').value = '';
-            document.getElementById('gateHeight').value = '';
-            for(let i=1;i<=5;i++) document.getElementById('v'+i).value = '';
-            
-            document.getElementById('gateName').focus();
-        }
-    </script>
-</body>
-</html>
+        <div class="form-group size
