@@ -85,3 +85,255 @@
             .table-container { overflow: visible; }
             table { width: 100%; min-width: auto; border: 2px solid black; font-size: 9pt; }
             th, td { border: 1px solid black; padding: 4px; color: black; }
+            
+            #printSummary { display: block !important; margin-top: 20px; border: 2px solid #000; padding: 10px; page-break-inside: avoid; }
+        }
+    </style>
+</head>
+<body onload="initDate()">
+
+    <h1>消防排煙風量測試報告</h1>
+
+    <div class="project-panel">
+        <label>🏗️ 工程名稱 / 案名</label>
+        <input type="text" id="projectInput" placeholder="例如：台南科學園區新建工程" oninput="updateFooter()">
+    </div>
+
+    <div class="input-panel">
+        <h3 style="margin-top:0; color:#555;">➕ 新增測量</h3>
+        <div class="form-group">
+            <label>閘門名稱</label>
+            <input type="text" id="gateName" placeholder="例如：1F-梯廳排煙口-A">
+        </div>
+        <div class="form-group size-inputs">
+            <div>
+                <label>寬度 (m)</label>
+                <input type="number" id="gateWidth" step="0.01" inputmode="decimal" placeholder="1.2">
+            </div>
+            <div>
+                <label>高度 (m)</label>
+                <input type="number" id="gateHeight" step="0.01" inputmode="decimal" placeholder="0.6">
+            </div>
+        </div>
+        <div class="form-group">
+            <label>個別設計風量 (CMM) <span style="font-weight:normal; font-size:0.8em; color:#666;">(若為合併檢討請留空)</span></label>
+            <input type="number" id="designCMM" step="1" inputmode="decimal" placeholder="例如：180">
+        </div>
+        <div class="form-group">
+            <label>5點風速 (m/s)</label>
+            <div class="wind-inputs">
+                <input type="number" id="v1" step="0.1" inputmode="decimal" placeholder="點1">
+                <input type="number" id="v2" step="0.1" inputmode="decimal" placeholder="點2">
+                <input type="number" id="v3" step="0.1" inputmode="decimal" placeholder="點3">
+                <input type="number" id="v4" step="0.1" inputmode="decimal" placeholder="點4">
+                <input type="number" id="v5" step="0.1" inputmode="decimal" placeholder="點5">
+            </div>
+        </div>
+        <button class="btn btn-add" onclick="addData()">加入列表</button>
+    </div>
+
+    <div style="overflow: hidden;">
+        <button class="btn btn-print" onclick="window.print()">列印報表 / 存 PDF</button>
+        <button class="btn btn-reset" onclick="clearTable()">清除所有資料</button>
+    </div>
+
+    <div class="table-container">
+        <table id="reportTable">
+            <thead>
+                <tr>
+                    <th class="no-print" style="width:30px;">選</th>
+                    <th>名稱</th>
+                    <th>尺寸/面積</th>
+                    <th>5點紀錄</th>
+                    <th>平均</th>
+                    <th>個別設計</th>
+                    <th>實測CMM</th>
+                    <th>個別判定</th>
+                    <th class="no-print">刪除</th>
+                </tr>
+            </thead>
+            <tbody>
+                </tbody>
+        </table>
+    </div>
+
+    <div id="printSummary" style="display: none;">
+        <h3>📊 合併檢討結果</h3>
+        <p><strong>合併數量：</strong> <span id="printCount">0</span> 處排煙口。</p>
+        <p><strong>合併閘門明細：</strong> <span id="printNames" style="font-size:0.95em; color:#333;">(無)</span></p>
+        
+        <table style="width:100%; border:none; margin-top:10px;">
+            <tr>
+                <td style="border:none; text-align:left;">實測總風量：<span id="printTotalMeasured" style="font-size:1.2em; font-weight:bold;">0</span> CMM</td>
+                <td style="border:none; text-align:left;">合併設計要求：<span id="printTotalDesign" style="font-size:1.2em; font-weight:bold;">-</span> CMM</td>
+                <td style="border:none; text-align:left;">合併判定：<span id="printResult">未檢討</span></td>
+            </tr>
+        </table>
+        <div style="margin-top:20px; border-top:1px solid #000; padding-top:10px; display:flex; justify-content:space-between;">
+            <span>工程名稱：<span id="footerProjectName">尚未輸入</span></span>
+            <span>測試日期：<span id="footerDate"></span></span>
+        </div>
+    </div>
+
+    <div class="summary-bar">
+        <div class="summary-content">
+            <div class="btn-check-group">
+                <span class="total-display">已勾選合計：<span id="totalMeasured" class="total-number">0.0</span> CMM</span>
+            </div>
+            
+            <div style="display:flex; align-items:center; gap:10px;">
+                <span style="font-size:0.9rem;">合併設計值：</span>
+                <input type="number" id="groupDesignCMM" class="summary-input" placeholder="輸入總量" oninput="updateTotal()">
+                <div id="groupStatus" class="group-status-box" style="background:#57606f;">尚未輸入</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function initDate() {
+            const today = new Date();
+            const dateStr = `${today.getFullYear()}/${String(today.getMonth() + 1).padStart(2, '0')}/${String(today.getDate()).padStart(2, '0')}`;
+            document.getElementById('footerDate').innerText = dateStr;
+        }
+
+        function updateFooter() {
+            const val = document.getElementById('projectInput').value;
+            document.getElementById('footerProjectName').innerText = val || "尚未輸入";
+        }
+
+        function addData() {
+            const name = document.getElementById('gateName').value;
+            const w = parseFloat(document.getElementById('gateWidth').value);
+            const h = parseFloat(document.getElementById('gateHeight').value);
+            const designVal = parseFloat(document.getElementById('designCMM').value);
+            const v1 = parseFloat(document.getElementById('v1').value)||0; 
+            const v2 = parseFloat(document.getElementById('v2').value)||0;
+            const v3 = parseFloat(document.getElementById('v3').value)||0; 
+            const v4 = parseFloat(document.getElementById('v4').value)||0;
+            const v5 = parseFloat(document.getElementById('v5').value)||0;
+
+            if (!name || isNaN(w) || isNaN(h)) { alert("請填寫完整資料！"); return; }
+
+            const area = w * h;
+            const avgSpeed = (v1+v2+v3+v4+v5)/5;
+            const measuredCMM = area * avgSpeed * 60;
+
+            // 個別判定
+            let statusHtml = "-";
+            let statusClass = "";
+            let checkState = "checked"; 
+
+            if (!isNaN(designVal)) {
+                checkState = ""; // 有個別設計值則預設不勾選
+                if (measuredCMM >= designVal) {
+                    statusHtml = "✅ 通過";
+                    statusClass = "status-pass";
+                } else {
+                    statusHtml = "❌ 不通過";
+                    statusClass = "status-fail";
+                }
+            }
+
+            const tbody = document.querySelector("#reportTable tbody");
+            const tr = document.createElement("tr");
+            
+            tr.innerHTML = `
+                <td class="no-print"><input type="checkbox" ${checkState} onchange="updateTotal()" data-cmm="${measuredCMM}"></td>
+                <td style="text-align:left;">${name}</td>
+                <td>${w}x${h}<br><span style="color:#666;font-size:0.8em">(${area.toFixed(2)}m²)</span></td>
+                <td style="font-size:0.8em;color:#555;">${v1},${v2},${v3},${v4},${v5}</td>
+                <td>${avgSpeed.toFixed(2)}</td>
+                <td>${isNaN(designVal) ? '-' : designVal}</td>
+                <td class="result-cmm">${measuredCMM.toFixed(2)}</td>
+                <td class="${statusClass}">${statusHtml}</td>
+                <td class="no-print"><button onclick="deleteRow(this)" style="color:red;border:1px solid red;background:none;border-radius:4px;">✕</button></td>
+            `;
+            tbody.appendChild(tr);
+            
+            updateTotal();
+            clearInputs();
+        }
+
+        // 核心計算與明細更新功能
+        function updateTotal() {
+            const checkboxes = document.querySelectorAll('#reportTable tbody input[type="checkbox"]');
+            let total = 0;
+            let checkedCount = 0;
+            let checkedNames = []; // 儲存勾選的名稱
+
+            checkboxes.forEach(box => {
+                if (box.checked) {
+                    total += parseFloat(box.getAttribute('data-cmm'));
+                    checkedCount++;
+                    // 抓取該行的名稱 (名稱在第2個 td，索引為1)
+                    let row = box.closest('tr');
+                    let name = row.cells[1].innerText;
+                    checkedNames.push(name);
+                }
+            });
+
+            // 1. 更新底部合計
+            document.getElementById('totalMeasured').innerText = total.toFixed(1);
+
+            // 2. 更新列印區塊
+            document.getElementById('printCount').innerText = checkedCount;
+            document.getElementById('printTotalMeasured').innerText = total.toFixed(1);
+            
+            // 更新明細名稱
+            if(checkedNames.length > 0) {
+                document.getElementById('printNames').innerText = checkedNames.join('、');
+            } else {
+                document.getElementById('printNames').innerText = "(無勾選項目)";
+            }
+
+            // 3. 判定邏輯
+            const groupDesign = parseFloat(document.getElementById('groupDesignCMM').value);
+            const statusBox = document.getElementById('groupStatus');
+            
+            if (!isNaN(groupDesign) && groupDesign > 0) {
+                document.getElementById('printTotalDesign').innerText = groupDesign;
+                
+                if (total >= groupDesign) {
+                    statusBox.innerText = "✅ 合併通過";
+                    statusBox.style.background = "#28a745";
+                    statusBox.style.color = "white";
+                    document.getElementById('printResult').innerHTML = "<span style='color:green; font-weight:bold;'>✅ 通過</span>";
+                } else {
+                    const diff = (groupDesign - total).toFixed(1);
+                    statusBox.innerText = `❌ 不足 ${diff}`;
+                    statusBox.style.background = "#dc3545";
+                    statusBox.style.color = "white";
+                    document.getElementById('printResult').innerHTML = `<span style='color:red; font-weight:bold;'>❌ 不通過 (少 ${diff})</span>`;
+                }
+            } else {
+                statusBox.innerText = "等待輸入設計值...";
+                statusBox.style.background = "#57606f";
+                statusBox.style.color = "white";
+                document.getElementById('printTotalDesign').innerText = "-";
+                document.getElementById('printResult').innerText = "未設定設計值";
+            }
+        }
+
+        function clearInputs() {
+            document.getElementById('gateName').value = '';
+            document.getElementById('gateWidth').value = '';
+            document.getElementById('gateHeight').value = '';
+            document.getElementById('designCMM').value = ''; 
+            for(let i=1;i<=5;i++) document.getElementById('v'+i).value = '';
+            document.getElementById('gateName').focus();
+        }
+
+        function deleteRow(btn) {
+            btn.closest('tr').remove();
+            updateTotal(); 
+        }
+
+        function clearTable() {
+            if(confirm("清除所有資料？")) {
+                document.querySelector("#reportTable tbody").innerHTML = "";
+                updateTotal();
+            }
+        }
+    </script>
+</body>
+</html>
