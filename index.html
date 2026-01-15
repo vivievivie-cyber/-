@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>消防排煙風量測試 (最終版)</title>
+    <title>消防排煙風量測試 (除錯版)</title>
     <style>
         /* --- 全域設定 --- */
         body { 
@@ -102,16 +102,16 @@
     <div class="input-panel">
         <h3 style="margin-top:0; color:#555;">➕ 新增測量</h3>
         <div class="form-group">
-            <label>閘門名稱</label>
+            <label>閘門名稱 <span style="color:red">*必填</span></label>
             <input type="text" id="gateName" placeholder="例如：1F-梯廳排煙口-A">
         </div>
         <div class="form-group size-inputs">
             <div>
-                <label>寬度 (m)</label>
+                <label>寬度 (m) <span style="color:red">*必填</span></label>
                 <input type="number" id="gateWidth" step="0.01" inputmode="decimal" placeholder="1.2">
             </div>
             <div>
-                <label>高度 (m)</label>
+                <label>高度 (m) <span style="color:red">*必填</span></label>
                 <input type="number" id="gateHeight" step="0.01" inputmode="decimal" placeholder="0.6">
             </div>
         </div>
@@ -202,58 +202,146 @@
         }
 
         function addData() {
-            const name = document.getElementById('gateName').value;
-            const w = parseFloat(document.getElementById('gateWidth').value);
-            const h = parseFloat(document.getElementById('gateHeight').value);
-            const designVal = parseFloat(document.getElementById('designCMM').value);
-            const v1 = parseFloat(document.getElementById('v1').value)||0; 
-            const v2 = parseFloat(document.getElementById('v2').value)||0;
-            const v3 = parseFloat(document.getElementById('v3').value)||0; 
-            const v4 = parseFloat(document.getElementById('v4').value)||0;
-            const v5 = parseFloat(document.getElementById('v5').value)||0;
+            try {
+                // 1. 取得資料
+                const name = document.getElementById('gateName').value;
+                const w = parseFloat(document.getElementById('gateWidth').value);
+                const h = parseFloat(document.getElementById('gateHeight').value);
+                const designVal = parseFloat(document.getElementById('designCMM').value);
+                const v1 = parseFloat(document.getElementById('v1').value)||0; 
+                const v2 = parseFloat(document.getElementById('v2').value)||0;
+                const v3 = parseFloat(document.getElementById('v3').value)||0; 
+                const v4 = parseFloat(document.getElementById('v4').value)||0;
+                const v5 = parseFloat(document.getElementById('v5').value)||0;
 
-            if (!name || isNaN(w) || isNaN(h)) { alert("請填寫完整資料！"); return; }
-
-            const area = w * h;
-            const avgSpeed = (v1+v2+v3+v4+v5)/5;
-            const measuredCMM = area * avgSpeed * 60;
-
-            // 個別判定
-            let statusHtml = "-";
-            let statusClass = "";
-            let checkState = "checked"; 
-
-            if (!isNaN(designVal)) {
-                checkState = ""; // 有個別設計值則預設不勾選
-                if (measuredCMM >= designVal) {
-                    statusHtml = "✅ 通過";
-                    statusClass = "status-pass";
-                } else {
-                    statusHtml = "❌ 不通過";
-                    statusClass = "status-fail";
+                // 2. 嚴格檢查 (會跳出視窗提醒)
+                if (!name) {
+                    alert("⚠️ 錯誤：請輸入「閘門名稱」！");
+                    return;
                 }
-            }
+                if (isNaN(w) || isNaN(h)) {
+                    alert("⚠️ 錯誤：請輸入正確的「寬度」與「高度」數字！");
+                    return;
+                }
 
-            const tbody = document.querySelector("#reportTable tbody");
-            const tr = document.createElement("tr");
-            
-            tr.innerHTML = `
-                <td class="no-print"><input type="checkbox" ${checkState} onchange="updateTotal()" data-cmm="${measuredCMM}"></td>
-                <td style="text-align:left;">${name}</td>
-                <td>${w}x${h}<br><span style="color:#666;font-size:0.8em">(${area.toFixed(2)}m²)</span></td>
-                <td style="font-size:0.8em;color:#555;">${v1},${v2},${v3},${v4},${v5}</td>
-                <td>${avgSpeed.toFixed(2)}</td>
-                <td>${isNaN(designVal) ? '-' : designVal}</td>
-                <td class="result-cmm">${measuredCMM.toFixed(2)}</td>
-                <td class="${statusClass}">${statusHtml}</td>
-                <td class="no-print"><button onclick="deleteRow(this)" style="color:red;border:1px solid red;background:none;border-radius:4px;">✕</button></td>
-            `;
-            tbody.appendChild(tr);
-            
-            updateTotal();
-            clearInputs();
+                const area = w * h;
+                const avgSpeed = (v1+v2+v3+v4+v5)/5;
+                const measuredCMM = area * avgSpeed * 60;
+
+                // 3. 個別判定
+                let statusHtml = "-";
+                let statusClass = "";
+                let checkState = "checked"; 
+
+                if (!isNaN(designVal)) {
+                    checkState = ""; // 有個別設計值則預設不勾選
+                    if (measuredCMM >= designVal) {
+                        statusHtml = "✅ 通過";
+                        statusClass = "status-pass";
+                    } else {
+                        statusHtml = "❌ 不通過";
+                        statusClass = "status-fail";
+                    }
+                }
+
+                const tbody = document.querySelector("#reportTable tbody");
+                const tr = document.createElement("tr");
+                
+                tr.innerHTML = `
+                    <td class="no-print"><input type="checkbox" ${checkState} onchange="updateTotal()" data-cmm="${measuredCMM}"></td>
+                    <td style="text-align:left;">${name}</td>
+                    <td>${w}x${h}<br><span style="color:#666;font-size:0.8em">(${area.toFixed(2)}m²)</span></td>
+                    <td style="font-size:0.8em;color:#555;">${v1},${v2},${v3},${v4},${v5}</td>
+                    <td>${avgSpeed.toFixed(2)}</td>
+                    <td>${isNaN(designVal) ? '-' : designVal}</td>
+                    <td class="result-cmm">${measuredCMM.toFixed(2)}</td>
+                    <td class="${statusClass}">${statusHtml}</td>
+                    <td class="no-print"><button onclick="deleteRow(this)" style="color:red;border:1px solid red;background:none;border-radius:4px;">✕</button></td>
+                `;
+                tbody.appendChild(tr);
+                
+                updateTotal();
+                clearInputs();
+
+            } catch (error) {
+                // 如果程式發生未知錯誤，會直接告訴你
+                alert("程式發生錯誤：" + error.message);
+            }
         }
 
-        // 核心計算與明細更新功能
         function updateTotal() {
-            const checkboxes = document.querySelectorAll('#reportTable tbody
+            const checkboxes = document.querySelectorAll('#reportTable tbody input[type="checkbox"]');
+            let total = 0;
+            let checkedCount = 0;
+            let checkedNames = [];
+
+            checkboxes.forEach(box => {
+                if (box.checked) {
+                    total += parseFloat(box.getAttribute('data-cmm'));
+                    checkedCount++;
+                    let row = box.closest('tr');
+                    let name = row.cells[1].innerText;
+                    checkedNames.push(name);
+                }
+            });
+
+            document.getElementById('totalMeasured').innerText = total.toFixed(1);
+            document.getElementById('printCount').innerText = checkedCount;
+            document.getElementById('printTotalMeasured').innerText = total.toFixed(1);
+            
+            if(checkedNames.length > 0) {
+                document.getElementById('printNames').innerText = checkedNames.join('、');
+            } else {
+                document.getElementById('printNames').innerText = "(無勾選項目)";
+            }
+
+            const groupDesign = parseFloat(document.getElementById('groupDesignCMM').value);
+            const statusBox = document.getElementById('groupStatus');
+            
+            if (!isNaN(groupDesign) && groupDesign > 0) {
+                document.getElementById('printTotalDesign').innerText = groupDesign;
+                
+                if (total >= groupDesign) {
+                    statusBox.innerText = "✅ 合併通過";
+                    statusBox.style.background = "#28a745";
+                    statusBox.style.color = "white";
+                    document.getElementById('printResult').innerHTML = "<span style='color:green; font-weight:bold;'>✅ 通過</span>";
+                } else {
+                    const diff = (groupDesign - total).toFixed(1);
+                    statusBox.innerText = `❌ 不足 ${diff}`;
+                    statusBox.style.background = "#dc3545";
+                    statusBox.style.color = "white";
+                    document.getElementById('printResult').innerHTML = `<span style='color:red; font-weight:bold;'>❌ 不通過 (少 ${diff})</span>`;
+                }
+            } else {
+                statusBox.innerText = "等待輸入設計值...";
+                statusBox.style.background = "#57606f";
+                statusBox.style.color = "white";
+                document.getElementById('printTotalDesign').innerText = "-";
+                document.getElementById('printResult').innerText = "未設定設計值";
+            }
+        }
+
+        function clearInputs() {
+            document.getElementById('gateName').value = '';
+            document.getElementById('gateWidth').value = '';
+            document.getElementById('gateHeight').value = '';
+            document.getElementById('designCMM').value = ''; 
+            for(let i=1;i<=5;i++) document.getElementById('v'+i).value = '';
+            document.getElementById('gateName').focus();
+        }
+
+        function deleteRow(btn) {
+            btn.closest('tr').remove();
+            updateTotal(); 
+        }
+
+        function clearTable() {
+            if(confirm("清除所有資料？")) {
+                document.querySelector("#reportTable tbody").innerHTML = "";
+                updateTotal();
+            }
+        }
+    </script>
+</body>
+</html>
