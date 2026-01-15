@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>消防排煙風量測試 (智慧勾選版)</title>
+    <title>消防排煙風量測試 (含明細)</title>
     <style>
         /* --- 全域設定 --- */
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
             margin: 0; padding: 15px; background-color: #f0f2f5; color: #333; 
-            padding-bottom: 150px; /* 為了底部的固定計算列預留空間 */
+            padding-bottom: 150px; 
         }
         h1 { text-align: center; font-size: 1.5rem; margin-bottom: 15px; color: #2c3e50; }
 
@@ -58,4 +58,30 @@
             z-index: 1000;
         }
         .summary-content {
-            max
+            max-width: 900px; margin: 0 auto;
+            display: flex; justify-content: space-between; align-items: center; gap: 15px;
+        }
+        .summary-input {
+            width: 120px !important; padding: 8px !important; 
+            border: 2px solid #3498db !important; text-align: center; font-weight: bold; color: #333;
+        }
+        .total-display { font-size: 1.1rem; }
+        .total-number { font-size: 1.5rem; color: #4cd137; font-weight: bold; }
+        .group-status-box { padding: 5px 15px; border-radius: 4px; font-weight: bold; }
+
+        /* --- RWD --- */
+        @media (max-width: 600px) {
+            .size-inputs { grid-template-columns: 1fr; }
+            .summary-content { flex-direction: column; align-items: flex-start; }
+            .summary-bar { padding: 10px; }
+            .btn-check-group { width: 100%; display: flex; justify-content: space-between; align-items: center;}
+            body { padding-bottom: 200px; }
+        }
+
+        /* --- 列印模式 --- */
+        @media print {
+            .input-panel, .project-panel, .btn, .no-print, .summary-bar { display: none !important; }
+            body { background-color: white; padding: 0; margin: 0; padding-bottom: 0; }
+            .table-container { overflow: visible; }
+            table { width: 100%; min-width: auto; border: 2px solid black; font-size: 9pt; }
+            th, td { border: 1px solid black; padding: 4px; color: black; }
