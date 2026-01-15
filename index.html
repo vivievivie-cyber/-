@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>排煙風量測試 (混合分流完整版)</title>
+    <title>排煙風量測試 (潔淨列印版)</title>
     <style>
         /* --- 全域設定 --- */
         body { 
@@ -71,13 +71,26 @@
             .size-inputs { grid-template-columns: 1fr; }
         }
 
-        /* --- 列印模式 --- */
+        /* --- 核心列印設定 (隱藏瀏覽器雜訊) --- */
+        @page {
+            margin: 0; /* 這裡設為0會強制移除瀏覽器的頁首頁尾 */
+            size: auto;
+        }
+
         @media print {
             .card, .btn, .no-print { display: none !important; }
-            body { background-color: white; padding: 0; margin: 0; }
+            
+            /* 因為 @page margin設為0，我們必須在 body 加回邊距，不然字會被切到 */
+            body { 
+                background-color: white; 
+                margin: 1.5cm; /* 紙張四周留白 */
+                padding: 0;
+            }
+
             .table-container { overflow: visible; }
             table { width: 100%; min-width: auto; border: 2px solid black; font-size: 9pt; page-break-inside: avoid; }
             th, td { border: 1px solid black; padding: 4px; color: black; }
+            
             .section-title { border: none; padding: 0; color: black; font-weight: bold; margin-top: 20px;}
         }
     </style>
