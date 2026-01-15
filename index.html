@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>消防排煙風量測試 (含明細)</title>
+    <title>消防排煙風量測試 (最終版)</title>
     <style>
         /* --- 全域設定 --- */
         body { 
@@ -256,84 +256,4 @@
 
         // 核心計算與明細更新功能
         function updateTotal() {
-            const checkboxes = document.querySelectorAll('#reportTable tbody input[type="checkbox"]');
-            let total = 0;
-            let checkedCount = 0;
-            let checkedNames = []; // 儲存勾選的名稱
-
-            checkboxes.forEach(box => {
-                if (box.checked) {
-                    total += parseFloat(box.getAttribute('data-cmm'));
-                    checkedCount++;
-                    // 抓取該行的名稱 (名稱在第2個 td，索引為1)
-                    let row = box.closest('tr');
-                    let name = row.cells[1].innerText;
-                    checkedNames.push(name);
-                }
-            });
-
-            // 1. 更新底部合計
-            document.getElementById('totalMeasured').innerText = total.toFixed(1);
-
-            // 2. 更新列印區塊
-            document.getElementById('printCount').innerText = checkedCount;
-            document.getElementById('printTotalMeasured').innerText = total.toFixed(1);
-            
-            // 更新明細名稱
-            if(checkedNames.length > 0) {
-                document.getElementById('printNames').innerText = checkedNames.join('、');
-            } else {
-                document.getElementById('printNames').innerText = "(無勾選項目)";
-            }
-
-            // 3. 判定邏輯
-            const groupDesign = parseFloat(document.getElementById('groupDesignCMM').value);
-            const statusBox = document.getElementById('groupStatus');
-            
-            if (!isNaN(groupDesign) && groupDesign > 0) {
-                document.getElementById('printTotalDesign').innerText = groupDesign;
-                
-                if (total >= groupDesign) {
-                    statusBox.innerText = "✅ 合併通過";
-                    statusBox.style.background = "#28a745";
-                    statusBox.style.color = "white";
-                    document.getElementById('printResult').innerHTML = "<span style='color:green; font-weight:bold;'>✅ 通過</span>";
-                } else {
-                    const diff = (groupDesign - total).toFixed(1);
-                    statusBox.innerText = `❌ 不足 ${diff}`;
-                    statusBox.style.background = "#dc3545";
-                    statusBox.style.color = "white";
-                    document.getElementById('printResult').innerHTML = `<span style='color:red; font-weight:bold;'>❌ 不通過 (少 ${diff})</span>`;
-                }
-            } else {
-                statusBox.innerText = "等待輸入設計值...";
-                statusBox.style.background = "#57606f";
-                statusBox.style.color = "white";
-                document.getElementById('printTotalDesign').innerText = "-";
-                document.getElementById('printResult').innerText = "未設定設計值";
-            }
-        }
-
-        function clearInputs() {
-            document.getElementById('gateName').value = '';
-            document.getElementById('gateWidth').value = '';
-            document.getElementById('gateHeight').value = '';
-            document.getElementById('designCMM').value = ''; 
-            for(let i=1;i<=5;i++) document.getElementById('v'+i).value = '';
-            document.getElementById('gateName').focus();
-        }
-
-        function deleteRow(btn) {
-            btn.closest('tr').remove();
-            updateTotal(); 
-        }
-
-        function clearTable() {
-            if(confirm("清除所有資料？")) {
-                document.querySelector("#reportTable tbody").innerHTML = "";
-                updateTotal();
-            }
-        }
-    </script>
-</body>
-</html>
+            const checkboxes = document.querySelectorAll('#reportTable tbody
