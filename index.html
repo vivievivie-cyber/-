@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>排煙風量測試 (雙選單版)</title>
+    <title>排煙風量測試 (快速計算版)</title>
     <style>
         /* --- 全域設定 --- */
         body { 
@@ -70,15 +70,27 @@
         .summary-table th { background-color: #343a40; color: white; }
         .summary-table td { font-weight: bold; font-size: 1.1em; }
 
+        /* --- 版權宣告樣式 (螢幕顯示) --- */
+        .copyright {
+            text-align: center; 
+            margin-top: 20px; 
+            font-size: 0.9rem; 
+            font-weight: bold; 
+            color: #888; /* 螢幕上用灰色，比較不搶眼 */
+            padding-bottom: 20px;
+        }
+
         /* --- RWD --- */
         @media (max-width: 600px) {
             .size-inputs { grid-template-columns: 1fr; }
         }
 
-        /* --- 列印模式 (去除頁首頁尾) --- */
+        /* --- 列印模式 (去除頁首頁尾 + 隱藏版權) --- */
         @page { margin: 0; size: auto; }
         @media print {
-            .card, .btn, .no-print { display: none !important; }
+            /* 隱藏區塊：卡片、按鈕、不列印區、以及【版權宣告】 */
+            .card, .btn, .no-print, .copyright { display: none !important; }
+            
             body { background-color: white; margin: 1.5cm; padding: 0; }
             .table-container { overflow: visible; }
             table { width: 100%; min-width: auto; border: 2px solid black; font-size: 9pt; page-break-inside: avoid; }
@@ -226,6 +238,10 @@
         <span>測試日期：<span id="footerDate"></span></span>
     </div>
 
+    <div class="copyright">
+        版權所有Ⓒ巨祥科技有限公司
+    </div>
+
     <script>
         let allData = [];
 
@@ -240,7 +256,7 @@
             document.getElementById('footerProjectName').innerText = val || "尚未輸入";
         }
 
-        // --- 核心邏輯：雙選單控制 (寬/高獨立) ---
+        // 雙選單控制
         function updateDim(type) {
             const selectId = type === 'w' ? 'wSelect' : 'hSelect';
             const inputId = type === 'w' ? 'gateWidth' : 'gateHeight';
@@ -249,12 +265,10 @@
             const inputEl = document.getElementById(inputId);
 
             if (selectVal === 'custom') {
-                // 顯示輸入框
                 inputEl.style.display = 'block';
-                inputEl.value = ''; // 清空讓使用者輸入
+                inputEl.value = ''; 
                 inputEl.focus();
             } else {
-                // 隱藏輸入框，並填入選單值
                 inputEl.style.display = 'none';
                 inputEl.value = selectVal;
             }
@@ -274,7 +288,6 @@
                 const v4 = parseFloat(document.getElementById('v4').value)||0;
                 const v5 = parseFloat(document.getElementById('v5').value)||0;
 
-                // 驗證邏輯
                 if (!name) { alert("請輸入閘門名稱！"); return; }
                 if (isNaN(w)) { alert("請選擇或輸入「寬度」！"); return; }
                 if (isNaN(h)) { alert("請選擇或輸入「高度」！"); return; }
@@ -472,7 +485,7 @@
         function clearInputs(clearGroupInfo) {
             document.getElementById('gateName').value = '';
             
-            // 重置選單與輸入框
+            // 重置選單
             document.getElementById('wSelect').value = ''; 
             document.getElementById('hSelect').value = ''; 
             document.getElementById('gateWidth').style.display = 'none';
